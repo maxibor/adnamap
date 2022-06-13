@@ -3,14 +3,53 @@
     "homePage": "https://github.com/nf-core/adnamap",
     "repos": {
         "nf-core/modules": {
+            "bowtie2/align": {
+                "git_sha": "cbc47767f7bb4751a9d178395bd66f051401a0c1"
+            },
+            "bowtie2/build": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
             "custom/dumpsoftwareversions": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "damageprofiler": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "fastp": {
+                "git_sha": "d0a1cbb703a130c19f6796c3fce24fbe7dfce789"
             },
             "fastqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             },
+            "freebayes": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
             "multiqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "picard/markduplicates": {
+                "git_sha": "63db63757cab03cfa7a02c0d0f134b66fbfadea6"
+            },
+            "qualimap/bamqc": {
+                "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe"
+            },
+            "samtools/faidx": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/flagstat": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/idxstats": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/index": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/sort": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/stats": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
             }
         }
     }

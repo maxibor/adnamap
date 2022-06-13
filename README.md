@@ -73,6 +73,53 @@ We thank the following people for their extensive assistance in the development 
 
 <!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
+## Pipeline workflow
+
+```mermaid
+flowchart TD
+    subgraph fastq_process[FastQ preprocessing]
+        fastq{FastQ file}
+        fastqc_before[FastQC before]
+        fastp["fastp: \n Adapter and Quality trimming + merging"]
+        fastqc_after[FastQC after]
+        fastq --> fastqc_before
+        fastq --> fastp
+        fastp -- Trimmed fastq --> fastqc_after
+    end
+    subgraph fastq_preproprecessing[FastA preprocessing]
+        fasta{Genome FastA file}
+        bowtie2_build[Bowtie2-build]
+        fasta --> bowtie2_build
+    end
+    subgraph alignment[Alignment]
+        bowtie2_align["Bowtie2 align subworkflow"]
+        bowtie2_build --Bowtie 2 index--> bowtie2_align
+        fastp --Trimmed fastq--> bowtie2_align
+    end
+    subgraph alignment_post[Alignment post-processing]
+        dedup["Dedup: PCR duplicate removal"]
+        bowtie2_align -- sorted/indexed bam--> dedup
+        dedup --deduplicated BAM-->Qualimap
+    end
+    subgraph variant_calling[Variant calling]
+        snpAD["snpAD: ancient DNA damage aware genotyper"]
+        freebayes["Freebayes: genotyper"]
+
+        dedup --deduplicated BAM-->snpAD
+        dedup --deduplicated BAM-->freebayes
+        vcf1{VCF}
+        vcf2{VCF}
+        snpAD --> vcf1
+        freebayes --> vcf2
+    end
+```
+
+
+
+
+
+
+
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).

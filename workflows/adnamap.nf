@@ -6,16 +6,24 @@
 
 def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 
-// Validate input parameters
-WorkflowAdnamap.initialise(params, log)
-
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
+def checkPathParamList = [ params.input, params.multiqc_config ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
-if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
+if (params.input) { ch_input = Channel.fromPath(params.input) } else { exit 1, 'Input samplesheet not specified!' }
+if (params.genomes) { ch_genomes = Channel.fromPath(params.genomes) } else { exit 1, 'Genomes sheet not specified!' }
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    CREATE GENOMES CHANNEL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+ch_genomes
+    .splitCsv(header:true, sep:',')
+    .map { row -> [["genome_name": row.genome_name], file(row.genome_path)] }
+    .set { genomes }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,7 +43,9 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { INPUT_CHECK   } from '../subworkflows/local/input_check'
+include { ALIGN_BOWTIE2 } from '../subworkflows/nf-core/align_bowtie2/main'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,9 +56,17 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/modules/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/modules/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
+include { SAMTOOLS_FAIDX                                   } from '../modules/nf-core/modules/samtools/faidx/main'
+include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/modules/fastqc/main'
+include { FASTP                                            } from '../modules/nf-core/modules/fastp/main'
+include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
+include { PICARD_MARKDUPLICATES                            } from '../modules/nf-core/modules/picard/markduplicates/main'
+include { SAMTOOLS_INDEX                                   } from '../modules/nf-core/modules/samtools/index/main'
+include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
+include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
+include { FREEBAYES                                        } from '../modules/nf-core/modules/freebayes/main'
+include { MULTIQC                                          } from '../modules/nf-core/modules/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,6 +78,12 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/
 def multiqc_report = []
 
 workflow ADNAMAP {
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FASTQ pre-processing
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
 
     ch_versions = Channel.empty()
 
@@ -74,10 +98,117 @@ workflow ADNAMAP {
     //
     // MODULE: Run FastQC
     //
-    FASTQC (
+    FASTQC_BEFORE (
         INPUT_CHECK.out.reads
     )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions.first())
+
+    FASTP (
+        INPUT_CHECK.out.reads, params.save_trimmed_fail, params.save_merged
+    )
+    ch_versions = ch_versions.mix(FASTP.out.versions.first())
+
+    FASTQC_AFTER (
+        FASTP.out.reads_merged.mix(FASTP.out.reads)
+    )
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FASTA pre-processing
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    SAMTOOLS_FAIDX (
+        genomes
+    )
+
+    BOWTIE2_BUILD (
+        genomes
+    )
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Mixing read and reference channel
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+
+    FASTP.out.reads_merged.mix(FASTP.out.reads) // id, single_end, merged_reads
+        .combine(BOWTIE2_BUILD.out.index) // genome_name, genome_index
+        .map{it -> [
+                [
+                    'id':it[0].id,
+                    'single_end': it[0].single_end,
+                    'genome_name': it[2].genome_name
+                ],
+                it[1], // reads
+                it[3] // genome_index
+            ]}
+        .set { ch_reads_genomes }
+
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Alignment
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
+    ALIGN_BOWTIE2 (
+        ch_reads_genomes
+    )
+    ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
+
+    PICARD_MARKDUPLICATES (
+        ALIGN_BOWTIE2.out.bam
+    )
+    ch_versions = ch_versions.mix(PICARD_MARKDUPLICATES.out.versions.first())
+
+
+    SAMTOOLS_INDEX (
+        PICARD_MARKDUPLICATES.out.bam
+    )
+
+    QUALIMAP_BAMQC (
+        PICARD_MARKDUPLICATES.out.bam, false
+    )
+    ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
+
+    PICARD_MARKDUPLICATES.out.bam.join(
+        SAMTOOLS_INDEX.out.bai
+    ).map {
+        it -> [it[0].genome_name, it[0].id, it[1], it[2]] // genome_name, id, bam, bai
+    }.join(
+        genomes
+            .map{
+                it -> [it[0].genome_name, it[1]] //genome_name, fasta
+            }
+    ).join(
+        SAMTOOLS_FAIDX.out.fai
+            .map{
+                it -> [it[0].genome_name, it[1]] // genome_name, fai
+            }
+    ).map{
+        it -> [['id':it[1], 'genome_name':it[0]], it[2], it[3], it[4], it[5]] // meta, bam, bai, fasta, fai
+    }.set {
+        synced_ch
+    }
+
+    DAMAGEPROFILER (
+        synced_ch, false
+    )
+
+    FREEBAYES (
+        synced_ch
+    )
+
+    ch_versions = ch_versions.mix(FREEBAYES.out.versions.first())
+
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Post-processing
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
@@ -94,7 +225,13 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PICARD_MARKDUPLICATES.out.metrics.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect()

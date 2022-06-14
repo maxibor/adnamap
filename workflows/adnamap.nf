@@ -60,7 +60,6 @@ include { SAMTOOLS_FAIDX                                   } from '../modules/nf
 include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/modules/fastqc/main'
 include { FASTP                                            } from '../modules/nf-core/modules/fastp/main'
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
-include { PICARD_MARKDUPLICATES                            } from '../modules/nf-core/modules/picard/markduplicates/main'
 include { SAMTOOLS_INDEX                                   } from '../modules/nf-core/modules/samtools/index/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
@@ -158,23 +157,13 @@ workflow ADNAMAP {
     )
     ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
 
-    PICARD_MARKDUPLICATES (
-        ALIGN_BOWTIE2.out.bam
-    )
-    ch_versions = ch_versions.mix(PICARD_MARKDUPLICATES.out.versions.first())
-
-
-    SAMTOOLS_INDEX (
-        PICARD_MARKDUPLICATES.out.bam
-    )
-
     QUALIMAP_BAMQC (
-        PICARD_MARKDUPLICATES.out.bam, false
+        ALIGN_BOWTIE2.out.bam, false
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
 
-    PICARD_MARKDUPLICATES.out.bam.join(
-        SAMTOOLS_INDEX.out.bai
+    ALIGN_BOWTIE2.out.bam.join(
+        ALIGN_BOWTIE2.out.bai
     ).map {
         it -> [it[0].genome_name, it[0].id, it[1], it[2]] // genome_name, id, bam, bai
     }.join(
@@ -230,7 +219,6 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PICARD_MARKDUPLICATES.out.metrics.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (

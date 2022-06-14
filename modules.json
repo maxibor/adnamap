@@ -27,9 +27,6 @@
             "multiqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
             },
-            "picard/markduplicates": {
-                "git_sha": "63db63757cab03cfa7a02c0d0f134b66fbfadea6"
-            },
             "qualimap/bamqc": {
                 "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe"
             },

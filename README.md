@@ -80,7 +80,7 @@ flowchart TD
     subgraph fastq_process[FastQ preprocessing]
         fastq{FastQ file}
         fastqc_before[FastQC before]
-        fastp["fastp: \n Adapter and Quality trimming + merging"]
+        fastp["fastp: \n Adapter and Quality trimming + merging + deduplication"]
         fastqc_after[FastQC after]
         fastq --> fastqc_before
         fastq --> fastp
@@ -96,17 +96,16 @@ flowchart TD
         bowtie2_build --Bowtie 2 index--> bowtie2_align
         fastp --Trimmed fastq--> bowtie2_align
     end
-    subgraph alignment_post[Alignment post-processing]
-        dedup["Dedup: PCR duplicate removal"]
-        bowtie2_align -- sorted/indexed bam--> dedup
-        dedup --deduplicated BAM-->Qualimap
+    subgraph alignment_post[Alignment post_processing]
+        qualimap[Alignment stats reporting]
+        bowtie2_align--BAM-->qualimap
     end
     subgraph variant_calling[Variant calling]
         snpAD["snpAD: ancient DNA damage aware genotyper"]
         freebayes["Freebayes: genotyper"]
 
-        dedup --deduplicated BAM-->snpAD
-        dedup --deduplicated BAM-->freebayes
+        bowtie2_align--BAM-->snpAD
+        bowtie2_align--BAM-->freebayes
         vcf1{VCF}
         vcf2{VCF}
         snpAD --> vcf1

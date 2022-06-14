@@ -80,6 +80,23 @@
                     "type": "string",
                     "default": "false",
                     "description": "Also include failed trimmed reads in output"
+                },
+                "deduplicate": {
+                    "type": "string",
+                    "default": "true",
+                    "description": "Perform deduplication with fastp"
+                },
+                "damageprofiler_length": {
+                    "type": "integer",
+                    "default": 100,
+                    "description": "Window length for DamageProfiler",
+                    "help_text": "Number of bases which are considered for frequency computations"
+                },
+                "damageprofiler_threshold": {
+                    "type": "integer",
+                    "default": 15,
+                    "description": "DamageProfiler threshold",
+                    "help_text": "Number of bases which are considered for plotting nucleotide misincorporations"
                 }
             }
         },

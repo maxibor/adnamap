@@ -1,5 +1,5 @@
 process DAMAGEPROFILER {
-    tag "$meta.id"
+    tag "${meta.id}_${meta.genome_name}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::damageprofiler=1.1" : null)
@@ -9,7 +9,6 @@ process DAMAGEPROFILER {
 
     input:
     tuple val(meta), path(bam), path(bai), path(fasta), path(fai)
-    path specieslist
 
     output:
     tuple val(meta), path("${prefix}"), emit: results
@@ -21,15 +20,16 @@ process DAMAGEPROFILER {
     script:
     def args = task.ext.args   ?: ''
     prefix   = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
-    def reference    = fasta ? "-r $fasta" : ""
-    def species_list = specieslist ? "-sf $specieslist" : ""
     """
+
     damageprofiler \\
+        -Xmx${task.memory.toGiga()}g \\
         -i $bam \\
-        -o $prefix/ \\
-        $args \\
-        $reference \\
-        $species_list
+        -r $fasta \\
+        -l ${params.damageprofiler_length} \\
+        -t ${params.damageprofiler_threshold} \\
+        -o $prefix \\
+        $args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

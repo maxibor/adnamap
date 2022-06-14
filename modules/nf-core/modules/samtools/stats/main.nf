@@ -1,5 +1,5 @@
 process SAMTOOLS_STATS {
-    tag "$meta.id"
+    tag "${meta.id}_${meta.genome_name}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::samtools=1.15.1" : null)
@@ -24,7 +24,7 @@ process SAMTOOLS_STATS {
     """
     samtools \\
         stats \\
-        --threads ${task.cpus-1} \\
+        --threads ${task.cpus} \\
         ${reference} \\
         ${input} \\
         > ${input}.stats

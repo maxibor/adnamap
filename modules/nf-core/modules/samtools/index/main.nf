@@ -1,5 +1,5 @@
 process SAMTOOLS_INDEX {
-    tag "$meta.id"
+    tag "${meta.id}_${meta.genome_name}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::samtools=1.15.1" : null)
@@ -24,7 +24,6 @@ process SAMTOOLS_INDEX {
     """
     samtools \\
         index \\
-        -@ ${task.cpus-1} \\
         $args \\
         $input
 

@@ -1,5 +1,5 @@
 process QUALIMAP_BAMQC {
-    tag "$meta.id"
+    tag "${meta.id}_${meta.genome_name}"
     label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::qualimap=2.2.2d" : null)
@@ -9,7 +9,6 @@ process QUALIMAP_BAMQC {
 
     input:
     tuple val(meta), path(bam)
-    path gff
 
     output:
     tuple val(meta), path("${prefix}"), emit: results
@@ -22,30 +21,15 @@ process QUALIMAP_BAMQC {
     def args = task.ext.args   ?: ''
     prefix   = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
 
-    def collect_pairs = meta.single_end ? '' : '--collect-overlap-pairs'
-    def memory     = task.memory.toGiga() + "G"
-    def regions = gff ? "--gff $gff" : ''
-
-    def strandedness = 'non-strand-specific'
-    if (meta.strandedness == 'forward') {
-        strandedness = 'strand-specific-forward'
-    } else if (meta.strandedness == 'reverse') {
-        strandedness = 'strand-specific-reverse'
-    }
     """
-    unset DISPLAY
-    mkdir tmp
-    export _JAVA_OPTIONS=-Djava.io.tmpdir=./tmp
     qualimap \\
-        --java-mem-size=$memory \\
         bamqc \\
-        $args \\
         -bam $bam \\
-        $regions \\
-        -p $strandedness \\
-        $collect_pairs \\
+        -nt ${task.cpus} \\
         -outdir $prefix \\
-        -nt $task.cpus
+        -outformat "HTML" \\
+        --java-mem-size=${task.memory.toGiga()}G \\
+        $args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -22,10 +22,11 @@ process FASTQC {
     def args = task.ext.args ?: ''
     // Add soft-links to original FastQs for consistent naming in pipeline
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def suffix = task.ext.suffix ? "_${task.ext.suffix}" : ""
     if (meta.single_end) {
         """
-        [ ! -f  ${prefix}.fastq.gz ] && ln -s $reads ${prefix}.fastq.gz
-        fastqc $args --threads $task.cpus ${prefix}.fastq.gz
+        [ ! -f  ${prefix}.fastq.gz ] && ln -s $reads ${prefix}${suffix}.fastq.gz
+        fastqc $args --threads $task.cpus ${prefix}${suffix}.fastq.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -34,9 +35,9 @@ process FASTQC {
         """
     } else {
         """
-        [ ! -f  ${prefix}_1.fastq.gz ] && ln -s ${reads[0]} ${prefix}_1.fastq.gz
-        [ ! -f  ${prefix}_2.fastq.gz ] && ln -s ${reads[1]} ${prefix}_2.fastq.gz
-        fastqc $args --threads $task.cpus ${prefix}_1.fastq.gz ${prefix}_2.fastq.gz
+        [ ! -f  ${prefix}_1.fastq.gz ] && ln -s ${reads[0]} ${prefix}_1${suffix}.fastq.gz
+        [ ! -f  ${prefix}_2.fastq.gz ] && ln -s ${reads[1]} ${prefix}_2${suffix}.fastq.gz
+        fastqc $args --threads $task.cpus ${prefix}_1${suffix}.fastq.gz ${prefix}_2${suffix}.fastq.gz
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

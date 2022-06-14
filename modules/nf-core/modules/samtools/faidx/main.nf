@@ -19,33 +19,16 @@ process SAMTOOLS_FAIDX {
 
     script:
     def args = task.ext.args ?: ''
-    fasta_name = fasta.toString() - '.gz'
+    """
+    samtools \\
+    faidx \\
+    $fasta
 
-    if (fasta_name == fasta.toString()) {
-        """
-        samtools \\
-        faidx \\
-        $fasta
-
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
-        END_VERSIONS
-        """
-    } else {
-        """
-        gunzip -cf $fasta > $fasta_name
-        
-        samtools \\
-        faidx \\
-        $fasta_name
-
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
-        END_VERSIONS
-        """
-    }
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
+    END_VERSIONS
+    """
 
     stub:
     """

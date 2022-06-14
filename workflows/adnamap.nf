@@ -59,6 +59,7 @@ include { ALIGN_BOWTIE2 } from '../subworkflows/nf-core/align_bowtie2/main'
 include { SAMTOOLS_FAIDX                                   } from '../modules/nf-core/modules/samtools/faidx/main'
 include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/modules/fastqc/main'
 include { FASTP                                            } from '../modules/nf-core/modules/fastp/main'
+include { GUNZIP                                           } from '../modules/nf-core/modules/gunzip/main'
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
 include { SAMTOOLS_INDEX                                   } from '../modules/nf-core/modules/samtools/index/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
@@ -117,12 +118,27 @@ workflow ADNAMAP {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
+    genomes
+        .branch {
+            decompressed: it[1].toString().tokenize(".")[-1] != 'gz'
+            compressed: it[1].toString().tokenize(".")[-1] == 'gz'
+        }
+        .set { genomes_fork}
+
+    GUNZIP (
+        genomes_fork.compressed
+    )
+
+    GUNZIP.out.gunzip
+        .mix(genomes_fork.decompressed)
+        .set { genomes_pre_processed }
+
     SAMTOOLS_FAIDX (
-        genomes
+        genomes_pre_processed
     )
 
     BOWTIE2_BUILD (
-        genomes
+        genomes_pre_processed
     )
 
     /*
@@ -158,7 +174,7 @@ workflow ADNAMAP {
     ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
 
     QUALIMAP_BAMQC (
-        ALIGN_BOWTIE2.out.bam, false
+        ALIGN_BOWTIE2.out.bam
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
 
@@ -166,24 +182,24 @@ workflow ADNAMAP {
         ALIGN_BOWTIE2.out.bai
     ).map {
         it -> [it[0].genome_name, it[0].id, it[1], it[2]] // genome_name, id, bam, bai
-    }.join(
-        genomes
+    }.combine(
+        genomes_pre_processed
             .map{
                 it -> [it[0].genome_name, it[1]] //genome_name, fasta
             }
-    ).join(
+    , by: 0).combine(
         SAMTOOLS_FAIDX.out.fai
             .map{
                 it -> [it[0].genome_name, it[1]] // genome_name, fai
             }
-    ).map{
+    , by: 0).map{
         it -> [['id':it[1], 'genome_name':it[0]], it[2], it[3], it[4], it[5]] // meta, bam, bai, fasta, fai
     }.set {
         synced_ch
     }
 
     DAMAGEPROFILER (
-        synced_ch, false
+        synced_ch
     )
 
     FREEBAYES (
@@ -216,7 +232,6 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_BEFORE.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))

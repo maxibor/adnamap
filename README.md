@@ -88,8 +88,13 @@ flowchart TD
     end
     subgraph fastq_preproprecessing[FastA preprocessing]
         fasta{Genome FastA file}
+        faidx[Samtools faidx]
+        fasta --compressed-->gunzip
+        gunzip-->bowtie2_build
         bowtie2_build[Bowtie2-build]
-        fasta --> bowtie2_build
+        fasta--not compressed--> bowtie2_build
+        gunzip-->faidx
+        fasta--not compressed-->faidx
     end
     subgraph alignment[Alignment]
         bowtie2_align["Bowtie2 align subworkflow"]
@@ -98,14 +103,24 @@ flowchart TD
     end
     subgraph alignment_post[Alignment post_processing]
         qualimap[Alignment stats reporting]
-        bowtie2_align--BAM-->qualimap
+        damageprofiler[DamageProfiler: aDNA stats]
+        fasta--decompressed-->damageprofiler
+        gunzip-->damageprofiler
+        bowtie2_align--BAM+index-->damageprofiler
+        bowtie2_align--BAM+index-->qualimap
     end
     subgraph variant_calling[Variant calling]
         snpAD["snpAD: ancient DNA damage aware genotyper"]
         freebayes["Freebayes: genotyper"]
 
-        bowtie2_align--BAM-->snpAD
-        bowtie2_align--BAM-->freebayes
+        bowtie2_align--BAM+index-->snpAD
+        bowtie2_align--BAM+index-->freebayes
+        fasta--decompressed-->snpAD
+        gunzip-->freebayes
+        faidx-->freebayes
+        fasta--decompressed-->snpAD
+        gunzip-->freebayes
+        faidx-->snpAD
         vcf1{VCF}
         vcf2{VCF}
         snpAD --> vcf1

@@ -11,7 +11,7 @@ process DAMAGEPROFILER {
     tuple val(meta), path(bam), path(bai), path(fasta), path(fai)
 
     output:
-    tuple val(meta), path("${prefix}"), emit: results
+    tuple val(meta), path("${prefix}_damageprofiler"), emit: results
     path  "versions.yml"              , emit: versions
 
     when:
@@ -23,12 +23,12 @@ process DAMAGEPROFILER {
     """
 
     damageprofiler \\
-        -Xmx${task.memory.toGiga()}g \\
+        -Xmx${task.memory.toMega()}m \\
         -i $bam \\
         -r $fasta \\
         -l ${params.damageprofiler_length} \\
         -t ${params.damageprofiler_threshold} \\
-        -o $prefix \\
+        -o ${prefix}_damageprofiler \\
         $args
 
     cat <<-END_VERSIONS > versions.yml

@@ -28,7 +28,7 @@ process QUALIMAP_BAMQC {
         -nt ${task.cpus} \\
         -outdir $prefix \\
         -outformat "HTML" \\
-        --java-mem-size=${task.memory.toGiga()}G \\
+        --java-mem-size=${task.memory.toGiga()}g \\
         $args
 
     cat <<-END_VERSIONS > versions.yml

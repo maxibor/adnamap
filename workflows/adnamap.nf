@@ -43,8 +43,9 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK   } from '../subworkflows/local/input_check'
-include { ALIGN_BOWTIE2 } from '../subworkflows/nf-core/align_bowtie2/main'
+include { INPUT_CHECK   }             from '../subworkflows/local/input_check'
+include { ALIGN_BOWTIE2 }             from '../subworkflows/nf-core/align_bowtie2/main'
+include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_index_samtools'
 
 
 /*
@@ -61,6 +62,8 @@ include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf
 include { FASTP                                            } from '../modules/nf-core/modules/fastp/main'
 include { GUNZIP                                           } from '../modules/nf-core/modules/gunzip/main'
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
+include { SAM2LCA                                          } from '../modules/nf-core/modules/sam2lca/main'
+include { SPLIT_BY_REF                                     } from '../modules/nf-core/modules/split_by_ref/main'
 include { SAMTOOLS_INDEX                                   } from '../modules/nf-core/modules/samtools/index/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
@@ -177,6 +180,32 @@ workflow ADNAMAP {
         ALIGN_BOWTIE2.out.bam
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
+
+    ALIGN_BOWTIE2.out.bam.join(
+        ALIGN_BOWTIE2.out.bai
+    ).map {
+        it -> [['id':it[0].id], it[1]] // id, bam
+    }.groupTuple().set { bams_synced }
+
+    MERGE_SORT_INDEX_SAMTOOLS (
+        bams_synced
+    )
+
+    SAM2LCA (
+        MERGE_SORT_INDEX_SAMTOOLS.out.bam.join(
+            MERGE_SORT_INDEX_SAMTOOLS.out.bai
+        )
+    )
+
+    SPLIT_BY_REF (
+        SAM2LCA.out.bam
+    )
+
+    SPLIT_BY_REF.out.bam_list
+    .map {
+        it -> [['taxid': it.baseName.tokenize("_")[-1]], file(it)]
+    }
+
 
     ALIGN_BOWTIE2.out.bam.join(
         ALIGN_BOWTIE2.out.bai

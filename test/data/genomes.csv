@@ -1,3 +1,3 @@
-genome_name,genome_path
-bacteroides_fragilis,https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/prokaryotes/bacteroides_fragilis/genome/genome.fna.gz
-candidatus_portiera_aleyrodidarum,https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/prokaryotes/candidatus_portiera_aleyrodidarum/genome/genome.fasta
+genome_name,taxid,genome_path
+bacteroides_fragilis,817,https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/prokaryotes/bacteroides_fragilis/genome/genome.fna.gz
+candidatus_portiera_aleyrodidarum,91844,https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/prokaryotes/candidatus_portiera_aleyrodidarum/genome/genome.fasta

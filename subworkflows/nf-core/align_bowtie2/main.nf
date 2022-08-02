@@ -3,7 +3,7 @@
 //
 
 include { BOWTIE2_ALIGN     } from '../../../modules/nf-core/modules/bowtie2/align/main'
-include { BAM_SORT_SAMTOOLS } from '../bam_sort_samtools/main'
+include { BAM_SORT_SAMTOOLS as BAM_SORT_SAMTOOLS } from '../bam_sort_samtools/main'
 
 workflow ALIGN_BOWTIE2 {
     take:

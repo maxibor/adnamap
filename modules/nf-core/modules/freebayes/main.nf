@@ -1,5 +1,5 @@
 process FREEBAYES {
-    tag "${meta.id}_${meta.genome_name}"
+    tag "${meta.id}_${meta.taxid}"
     label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::freebayes=1.3.5" : null)

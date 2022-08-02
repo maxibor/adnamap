@@ -1,5 +1,5 @@
-include { SAMTOOLS_MERGE     } from  '../../../modules/nf-core/modules/samtools/merge/main'
-include { BAM_SORT_SAMTOOLS  } from '../bam_sort_samtools/main'
+include { SAMTOOLS_MERGE     } from  '../../modules/nf-core/modules/samtools/merge/main'
+include { BAM_SORT_SAMTOOLS as BAM_SORT_SAMTOOLS  } from '../nf-core/bam_sort_samtools/main'
 
 workflow MERGE_SORT_INDEX_SAMTOOLS {
     take:

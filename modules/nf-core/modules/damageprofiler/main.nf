@@ -1,11 +1,11 @@
 process DAMAGEPROFILER {
-    tag "${meta.id}_${meta.genome_name}"
+    tag "${meta.id}_${meta.taxid}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::damageprofiler=1.1" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/damageprofiler:1.1--hdfd78af_2' :
-        'quay.io/biocontainers/sam2lca:1.0.0--hdfd78af_2' }"
+        'quay.io/biocontainers/damageprofiler:1.1--hdfd78af_2' }"
 
     input:
     tuple val(meta), path(bam), path(bai), path(fasta), path(fai)

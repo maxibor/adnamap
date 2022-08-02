@@ -1,5 +1,5 @@
 process SAMTOOLS_STATS {
-    tag "${meta.id}_${meta.genome_name}"
+    tag "${meta.id}_${meta.taxid}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::samtools=1.15.1" : null)

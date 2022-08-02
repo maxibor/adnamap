@@ -16,7 +16,7 @@ env:
 jobs:
   test:
     name: Run pipeline with test data
-    if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/adnamap') }}"
+    if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'maxibor/adnamap') }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:

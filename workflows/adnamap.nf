@@ -181,11 +181,6 @@ workflow ADNAMAP {
     )
     ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
 
-    QUALIMAP_BAMQC (
-        ALIGN_BOWTIE2.out.bam
-    )
-    ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
-
     ALIGN_BOWTIE2.out.bam.join(
         ALIGN_BOWTIE2.out.bai
     ).map {
@@ -213,16 +208,12 @@ workflow ADNAMAP {
                 new_meta['taxid'] = bam.baseName.toString().split("_taxid_")[-1].tokenize(".")[0]
             [new_meta , bam]
     }
-    .view{"after map $it"}
     .set{ bam_split_by_ref} // id, taxid, bam
 
 
     INDEX_PER_GENOME {
         bam_split_by_ref
     }
-
-    // INDEX_PER_GENOME.out.bai.view()
-
 
     bam_split_by_ref.join(
         INDEX_PER_GENOME.out.bai
@@ -249,11 +240,20 @@ workflow ADNAMAP {
         synced_ch
     )
 
+    ch_versions = ch_versions.mix(DAMAGEPROFILER.out.versions.first())
+
     FREEBAYES (
         synced_ch
     )
 
     ch_versions = ch_versions.mix(FREEBAYES.out.versions.first())
+
+    QUALIMAP_BAMQC (
+        synced_ch
+    )
+    ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
+
+
 
 
     /*

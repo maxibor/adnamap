@@ -21,11 +21,14 @@ process DAMAGEPROFILER {
     def args = task.ext.args   ?: ''
     prefix   = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
     """
+    mv $bam ${prefix}.sam2lca.bam
+    mv $bai ${prefix}.sam2lca.bai
 
     damageprofiler \\
         -Xmx${task.memory.toMega()}m \\
-        -i $bam \\
+        -i ${prefix}.sam2lca.bam \\
         -r $fasta \\
+        -title $prefix \\
         -l ${params.damageprofiler_length} \\
         -t ${params.damageprofiler_threshold} \\
         -o ${prefix}_damageprofiler \\

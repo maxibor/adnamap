@@ -1,0 +1,15 @@
+{
+    "mapfiles": {
+        "nftest": [
+            "nftest.accession2taxid.gz"
+        ]
+    },
+    "mapmd5": {
+        "nftest": [
+            "nftest.accession2taxid.gz.md5"
+        ]
+    },
+    "map_db": {
+        "nftest": "nftest.db"
+    }
+}

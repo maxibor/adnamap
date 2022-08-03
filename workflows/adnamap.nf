@@ -250,6 +250,7 @@ workflow ADNAMAP {
 
     QUALIMAP_BAMQC (
         synced_ch
+            .map{ it -> [it[0], it[1]] } // meta, bam
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
 

@@ -28,6 +28,7 @@ process SAM2LCA {
     sam2lca \\
         -d $sam2lca_db \\
         analyze \\
+        -p ${task.cpus} \\
         $args \\
         -b \\
         $args2 \\

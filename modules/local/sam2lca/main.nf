@@ -1,6 +1,5 @@
 process SAM2LCA {
     tag "${meta.id}"
-    label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::sam2lca=1.1.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

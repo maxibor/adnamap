@@ -1,10 +1,10 @@
 process SAM2LCA {
     tag "${meta.id}"
 
-    conda (params.enable_conda ? "bioconda::sam2lca=1.1.0" : null)
+    conda (params.enable_conda ? "bioconda::sam2lca=1.1.2" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/sam2lca:1.1.1--pyhdfd78af_0' :
-        'quay.io/biocontainers/sam2lca:1.1.1--pyhdfd78af_0'            }"
+        'https://depot.galaxyproject.org/singularity/sam2lca:1.1.2--pyhdfd78af_0' :
+        'quay.io/biocontainers/sam2lca:1.1.2--pyhdfd78af_0'            }"
 
     input:
     tuple val(meta), path(bam), path(bai)

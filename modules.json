@@ -3,6 +3,15 @@
     "homePage": "https://github.com/nf-core/adnamap",
     "repos": {
         "nf-core/modules": {
+            "bcftools/consensus": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
+            "bcftools/index": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
+            "bcftools/view": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
             "bowtie2/align": {
                 "git_sha": "cbc47767f7bb4751a9d178395bd66f051401a0c1"
             },

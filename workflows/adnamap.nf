@@ -78,6 +78,9 @@ include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
 include { FREEBAYES                                        } from '../modules/nf-core/modules/freebayes/main'
+include { BCFTOOLS_INDEX                                   } from '../modules/nf-core/modules/bcftools/index/main'
+include { BCFTOOLS_VIEW                                    } from '../modules/nf-core/modules/bcftools/view/main'
+include { BCFTOOLS_CONSENSUS                               } from '../modules/nf-core/modules/bcftools/consensus/main'
 include { MULTIQC                                          } from '../modules/nf-core/modules/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
 
@@ -246,6 +249,22 @@ workflow ADNAMAP {
     )
 
     ch_versions = ch_versions.mix(FREEBAYES.out.versions.first())
+
+    BCFTOOLS_INDEX (
+        FREEBAYES.out.vcf
+    )
+
+    BCFTOOLS_VIEW (
+        FREEBAYES.out.vcf.join(BCFTOOLS_INDEX.out.tbi), [], [], []
+    )
+
+    BCFTOOLS_CONSENSUS (
+        BCFTOOLS_VIEW.out.vcf
+            .join(BCFTOOLS_VIEW.out.tbi)
+            .join(synced_ch.map {it -> [it[0], it[3]]}) // meta, fasta
+    )
+
+    ch_versions = ch_versions.mix(BCFTOOLS_CONSENSUS.out.versions.first())
 
     QUALIMAP_BAMQC (
         synced_ch

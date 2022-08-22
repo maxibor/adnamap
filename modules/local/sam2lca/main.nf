@@ -28,10 +28,9 @@ process SAM2LCA {
         -d $sam2lca_db \\
         analyze \\
         -p ${task.cpus} \\
-        $args \\
         -b \\
+        $args \\
         $args2 \\
-        $args3 \\
         $bam
 
     cat <<-END_VERSIONS > versions.yml

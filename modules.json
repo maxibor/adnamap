@@ -9,6 +9,9 @@
             "bcftools/index": {
                 "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
             },
+            "bcftools/stats": {
+                "git_sha": "535975eb81c9e48eb0403c136b7f1dd7acb1afad"
+            },
             "bcftools/view": {
                 "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
             },

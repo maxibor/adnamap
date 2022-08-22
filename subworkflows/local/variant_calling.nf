@@ -1,5 +1,7 @@
-include { FREEBAYES          } from '../../modules/nf-core/modules/freebayes/main'
-include { BCFTOOLS_INDEX     } from '../../modules/nf-core/modules/bcftools/index/main'
+include { FREEBAYES } from '../../modules/nf-core/modules/freebayes/main'
+include { BCFTOOLS_INDEX as BCFTOOLS_INDEX_PRE;
+          BCFTOOLS_INDEX as BCFTOOLS_INDEX_POST
+        } from '../../modules/nf-core/modules/bcftools/index/main'
 include { BCFTOOLS_VIEW      } from '../../modules/nf-core/modules/bcftools/view/main'
 include { BCFTOOLS_STATS     } from '../../modules/nf-core/modules/bcftools/stats/main'
 include { BCFTOOLS_CONSENSUS } from '../../modules/nf-core/modules/bcftools/consensus/main'
@@ -18,7 +20,7 @@ workflow VARIANT_CALLING {
 
     ch_versions = ch_versions.mix(FREEBAYES.out.versions)
 
-    BCFTOOLS_INDEX (
+    BCFTOOLS_INDEX_PRE (
         FREEBAYES.out.vcf
     )
 
@@ -27,19 +29,22 @@ workflow VARIANT_CALLING {
     )
 
     BCFTOOLS_VIEW (
-        FREEBAYES.out.vcf.join(BCFTOOLS_INDEX.out.tbi), [], [], []
+        FREEBAYES.out.vcf.join(BCFTOOLS_INDEX_PRE.out.tbi), [], [], []
+    )
+
+    BCFTOOLS_INDEX_POST(
+        BCFTOOLS_VIEW.out.vcf
     )
 
     BCFTOOLS_CONSENSUS (
         BCFTOOLS_VIEW.out.vcf
-            .join(BCFTOOLS_INDEX.out.tbi)
+            .join(BCFTOOLS_INDEX_POST.out.tbi)
             .join(synced_ch.map {it -> [it[0], it[3]]}) // meta, fasta
     )
     ch_versions = ch_versions.mix(BCFTOOLS_CONSENSUS.out.versions)
 
     emit:
     vcf= FREEBAYES.out.vcf
-    tbi= BCFTOOLS_INDEX.out.tbi
     stats= BCFTOOLS_STATS.out.stats
     consensus= BCFTOOLS_CONSENSUS.out.fasta
     versions= ch_versions

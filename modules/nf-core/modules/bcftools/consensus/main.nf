@@ -19,7 +19,7 @@ process BCFTOOLS_CONSENSUS {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
     """
     cat $fasta \\
         | bcftools \\

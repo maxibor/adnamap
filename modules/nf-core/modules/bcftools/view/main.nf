@@ -22,7 +22,7 @@ process BCFTOOLS_VIEW {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
     def regions_file  = regions ? "--regions-file ${regions}" : ""
     def targets_file = targets ? "--targets-file ${targets}" : ""
     def samples_file =  samples ? "--samples-file ${samples}" : ""

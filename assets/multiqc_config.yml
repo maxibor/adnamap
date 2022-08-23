@@ -14,14 +14,18 @@ top_modules:
         path_filters:
             - '*after_fastqc.zip'
     - 'bowtie2':
+        name: 'Bowtie2 (before LCA)'
         path_filters:
             - '*.bowtie2.log'
     - 'samtools':
-        name: 'Samtools Stats'
+        name: 'Samtools Stats (before LCA)'
         path_filters:
             - '*_flagstat.stats'
-    - 'damageprofiler'
-    - 'qualimap'
+    - 'qualimap':
+        name: 'Qualimap (after LCA)'
+    - 'damageprofiler':
+        name: 'Damageprofiler (after LCA)'
+    
 
 qualimap_config:
     general_stats_coverage:
@@ -47,13 +51,6 @@ table_columns_visible:
         percent_gc: True
     bowtie2:
         overall_alignment_rate: True
-    DamageProfiler:
-        5 Prime1: True
-        5 Prime2: True
-        3 Prime1: False
-        3 Prime2: False
-        mean_readlength: True
-        median: True
     QualiMap:
         mapped_reads: True
         mean_coverage: True
@@ -61,6 +58,13 @@ table_columns_visible:
         5_x_pc: True
         percentage_aligned: False
         median_insert_size: False
+    DamageProfiler:
+        5 Prime1: True
+        5 Prime2: True
+        3 Prime1: False
+        3 Prime2: False
+        mean_readlength: True
+        median: True
 
 table_columns_placement:
     FastQC (pre-Trimming):
@@ -75,23 +79,23 @@ table_columns_placement:
         percent_gc: 420
     Bowtie 2 / HiSAT2:
         overall_alignment_rate: 450
-    DamageProfiler:
-        5 Prime1: 700
-        5 Prime2: 710
-        3 Prime1: 720
-        3 Prime2: 730
-        mean_readlength: 740
-        median: 750
     QualiMap:
-        mapped_reads: 800
-        mean_coverage: 805
-        median_coverage: 810
-        1_x_pc: 820
-        2_x_pc: 830
-        3_x_pc: 840
-        4_x_pc: 850
-        5_x_pc: 860
-        avg_gc: 870
+        mapped_reads: 700
+        mean_coverage: 705
+        median_coverage: 710
+        1_x_pc: 720
+        2_x_pc: 730
+        3_x_pc: 740
+        4_x_pc: 750
+        5_x_pc: 760
+        avg_gc: 770
+    DamageProfiler:
+        5 Prime1: 800
+        5 Prime2: 810
+        3 Prime1: 820
+        3 Prime2: 830
+        mean_readlength: 840
+        median: 850
 read_count_multiplier: 1
 read_count_prefix: ''
 read_count_desc: ''

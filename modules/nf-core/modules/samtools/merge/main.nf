@@ -1,6 +1,6 @@
 process SAMTOOLS_MERGE {
-    tag "$meta.id"
-    label 'process_low'
+    tag "${meta.id}"
+    label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::samtools=1.15.1" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -9,6 +9,8 @@ process SAMTOOLS_MERGE {
 
     input:
     tuple val(meta), path(input_files)
+    path fasta
+    path fai
 
     output:
     tuple val(meta), path("${prefix}.bam") , optional:true, emit: bam
@@ -22,11 +24,13 @@ process SAMTOOLS_MERGE {
     def args = task.ext.args   ?: ''
     prefix   = task.ext.prefix ?: "${meta.id}"
     def file_type = input_files[0].getExtension()
+    def reference = fasta ? "--reference ${fasta}" : ""
     """
     samtools \\
         merge \\
         --threads ${task.cpus} \\
         $args \\
+        ${reference} \\
         -o ${prefix}.${file_type} \\
         $input_files
 

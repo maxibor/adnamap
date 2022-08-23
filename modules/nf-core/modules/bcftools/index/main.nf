@@ -1,5 +1,5 @@
 process BCFTOOLS_INDEX {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::bcftools=1.15.1" : null)
@@ -20,7 +20,7 @@ process BCFTOOLS_INDEX {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     bcftools \\

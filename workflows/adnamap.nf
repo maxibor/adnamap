@@ -56,7 +56,8 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 include { INPUT_CHECK               } from '../subworkflows/local/input_check'
 include { ALIGN_BOWTIE2             } from '../subworkflows/nf-core/align_bowtie2/main'
 include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_index_samtools'
-include { BAM_SORT_SAMTOOLS as BSS  } from '../subworkflows/nf-core/bam_sort_samtools/main'
+include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
+include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
 
 
 /*
@@ -81,7 +82,6 @@ include { BEDTOOLS_BAMTOBED                                } from '../modules/nf
 include { PRESEQ_LCEXTRAP                                  } from '../modules/nf-core/modules/preseq/lcextrap/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
-include { FREEBAYES                                        } from '../modules/nf-core/modules/freebayes/main'
 include { MULTIQC                                          } from '../modules/nf-core/modules/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
 
@@ -240,12 +240,12 @@ workflow ADNAMAP {
 
     ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
 
-    INDEX_PER_GENOME {
+    BAM_SORT_SAMTOOLS {
         bam_split_by_ref
     }
 
-    bam_split_by_ref.join(
-        INDEX_PER_GENOME.out.bai
+    BAM_SORT_SAMTOOLS.out.bam.join(
+        BAM_SORT_SAMTOOLS.out.bai
     ).map {
         it -> [it[0].taxid, it[0].id, it[1], it[2]] // taxid, id, bam, bai
     }.combine(
@@ -277,17 +277,17 @@ workflow ADNAMAP {
 
     ch_versions = ch_versions.mix(DAMAGEPROFILER.out.versions.first())
 
-    FREEBAYES (
-        synced_ch
-    )
-
-    ch_versions = ch_versions.mix(FREEBAYES.out.versions.first())
-
     QUALIMAP_BAMQC (
         synced_ch
             .map{ it -> [it[0], it[1]] } // meta, bam
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
+
+    VARIANT_CALLING (
+        synced_ch
+    )
+
+    ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -318,6 +318,8 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(DAMAGEPROFILER.out.results.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))
+
 
     MULTIQC (
         ch_multiqc_files.collect()

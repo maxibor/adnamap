@@ -58,7 +58,7 @@ include { ALIGN_BOWTIE2             } from '../subworkflows/nf-core/align_bowtie
 include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_index_samtools'
 include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
 include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
-
+include { BAM_PICARD_MARKDUPLICATES } from '../subworkflows/local/bam_picard_markduplicates.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,8 +76,6 @@ include { GUNZIP                                           } from '../modules/nf
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
 include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/modules/samtools/index/main'
-include { PICARD_MARKDUPLICATES                            } from '../modules/nf-core/modules/picard/markduplicates/main'
-include { SAMTOOLS_SORT                                    } from '../modules/nf-core/modules/samtools/sort/main'
 include { BEDTOOLS_BAMTOBED                                } from '../modules/nf-core/modules/bedtools/bamtobed/main'
 include { PRESEQ_LCEXTRAP                                  } from '../modules/nf-core/modules/preseq/lcextrap/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
@@ -219,30 +217,28 @@ workflow ADNAMAP {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    PICARD_MARKDUPLICATES {
-        bam_split_by_ref
-    }
-
-    ch_versions = ch_versions.mix(PICARD_MARKDUPLICATES.out.versions.first())
-
-    SAMTOOLS_SORT {
-        PICARD_MARKDUPLICATES.out.bam
-    }
-    ch_versions = ch_versions.mix(SAMTOOLS_SORT.out.versions.first())
-
-    BEDTOOLS_BAMTOBED {
-        SAMTOOLS_SORT.out.bam
-    }
-
-    PRESEQ_LCEXTRAP {
-        BEDTOOLS_BAMTOBED.out.bed
-    }
-
-    ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
-
     BAM_SORT_SAMTOOLS {
         bam_split_by_ref
     }
+
+    BAM_PICARD_MARKDUPLICATES {
+        BAM_SORT_SAMTOOLS.out.bam
+    }
+
+    //ch_versions = ch_versions.mix(BAM_PICARD_MARKDUPLICATES.out.versions.first())
+
+    //BEDTOOLS_BAMTOBED {
+    //    BAM_PICARD_MARKDUPLICATES.out.bam
+    //}
+    //ch_versions = ch_versions.mix(BEDTOOLS_BAMTOBED.out.versions.first())
+
+
+    //PRESEQ_LCEXTRAP {
+    //    BAM_PICARD_MARKDUPLICATES.out.bam
+    //}
+
+    //ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
+
 
     BAM_SORT_SAMTOOLS.out.bam.join(
         BAM_SORT_SAMTOOLS.out.bai
@@ -314,8 +310,8 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PICARD_MARKDUPLICATES.out.metrics.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
+    // TODO markdup
+    //ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(DAMAGEPROFILER.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))

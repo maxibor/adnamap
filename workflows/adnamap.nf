@@ -221,26 +221,26 @@ workflow ADNAMAP {
         bam_split_by_ref
     }
 
-    BAM_PICARD_MARKDUPLICATES {
+    BAM_PICARD_MARKDUPLICATES (
         BAM_SORT_SAMTOOLS.out.bam
+    )
+
+    ch_versions = ch_versions.mix(BAM_PICARD_MARKDUPLICATES.out.versions.first())
+
+    BEDTOOLS_BAMTOBED {
+        BAM_PICARD_MARKDUPLICATES.out.bam
+    }
+    ch_versions = ch_versions.mix(BEDTOOLS_BAMTOBED.out.versions.first())
+
+
+    PRESEQ_LCEXTRAP {
+        BAM_PICARD_MARKDUPLICATES.out.bam
     }
 
-    //ch_versions = ch_versions.mix(BAM_PICARD_MARKDUPLICATES.out.versions.first())
-
-    //BEDTOOLS_BAMTOBED {
-    //    BAM_PICARD_MARKDUPLICATES.out.bam
-    //}
-    //ch_versions = ch_versions.mix(BEDTOOLS_BAMTOBED.out.versions.first())
+    ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
 
 
-    //PRESEQ_LCEXTRAP {
-    //    BAM_PICARD_MARKDUPLICATES.out.bam
-    //}
-
-    //ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
-
-
-    BAM_SORT_SAMTOOLS.out.bam.join(
+    BAM_PICARD_MARKDUPLICATES.out.bam.join(
         BAM_SORT_SAMTOOLS.out.bai
     ).map {
         it -> [it[0].taxid, it[0].id, it[1], it[2]] // taxid, id, bam, bai
@@ -310,8 +310,8 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_AFTER.out.zip.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
-    // TODO markdup
-    //ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(BAM_PICARD_MARKDUPLICATES.out.metrics.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(DAMAGEPROFILER.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))

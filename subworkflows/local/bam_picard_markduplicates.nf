@@ -17,7 +17,6 @@ workflow BAM_PICARD_MARKDUPLICATES {
     ch_versions = Channel.empty()
     ch_multiqc  = Channel.empty()
 
-
     PICARD_MARKDUPLICATES {
         ch_bam
     }
@@ -37,11 +36,10 @@ workflow BAM_PICARD_MARKDUPLICATES {
     emit:
     unsorted_bam = PICARD_MARKDUPLICATES.out.bam      // channel: [ val(meta), [ bam ] ]
     unsorted_bai = PICARD_MARKDUPLICATES.out.bai      // OPTIONAL channel: [ val(meta), [ bai ] ]
-    metric       = PICARD_MARKDUPLICATES.out.metrics  // channel: [ val(meta), [ metrics ] ]
+    metrics      = PICARD_MARKDUPLICATES.out.metrics  // channel: [ val(meta), [ metrics ] ]
     bam          = SAMTOOLS_SORT.out.bam              // channel: [ val(meta), [ bam ] ]
     bai          = SAMTOOLS_INDEX.out.bai             // channel: [ val(meta), [ bai ] ]
     csi          = SAMTOOLS_INDEX.out.csi             // channel: [ val(meta), [ csi ] ]
-
 
     versions = ch_versions                            // channel: [ versions.yml ]
 

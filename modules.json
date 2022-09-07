@@ -3,6 +3,9 @@
     "homePage": "https://github.com/nf-core/adnamap",
     "repos": {
         "nf-core/modules": {
+            "bedtools/bamtobed": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
             "bcftools/consensus": {
                 "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
             },
@@ -41,6 +44,12 @@
             },
             "multiqc": {
                 "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "picard/markduplicates": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
+            "preseq/lcextrap": {
+                "git_sha": "7111e571cc5b6069de4673cd6165af680f17b4d7"
             },
             "qualimap/bamqc": {
                 "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe"

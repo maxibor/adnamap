@@ -58,7 +58,7 @@ include { ALIGN_BOWTIE2             } from '../subworkflows/nf-core/align_bowtie
 include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_index_samtools'
 include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
 include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
-
+include { BAM_PICARD_MARKDUPLICATES } from '../subworkflows/local/bam_picard_markduplicates.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,6 +76,8 @@ include { GUNZIP                                           } from '../modules/nf
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
 include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/modules/samtools/index/main'
+include { BEDTOOLS_BAMTOBED                                } from '../modules/nf-core/modules/bedtools/bamtobed/main'
+include { PRESEQ_LCEXTRAP                                  } from '../modules/nf-core/modules/preseq/lcextrap/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
 include { MULTIQC                                          } from '../modules/nf-core/modules/multiqc/main'
@@ -166,8 +168,8 @@ workflow ADNAMAP {
         .map {
             meta_reads, reads, meta_genome, genome_index ->
                 [
-                    ['id': meta_reads.id + "_" + meta_genome.genome_name, 
-                     'genome_name': meta_genome.genome_name, 
+                    ['id': meta_reads.id + "_" + meta_genome.genome_name,
+                     'genome_name': meta_genome.genome_name,
                      'taxid': meta_genome.taxid,
                      'sample_name': meta_reads.id,
                      'single_end': meta_reads.single_end
@@ -209,7 +211,6 @@ workflow ADNAMAP {
         sam2lca_db
     )
 
-
     SAM2LCA.out.bam
     .transpose()
     .map {
@@ -228,11 +229,42 @@ workflow ADNAMAP {
     }
     .set{ bam_split_by_ref} // meta, bam
 
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Duplicate Removal and Separation
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+
     BAM_SORT_SAMTOOLS {
         bam_split_by_ref
     }
 
-    BAM_SORT_SAMTOOLS.out.bam.join(
+    if (params.deduplicate == 'mark') {
+        BAM_PICARD_MARKDUPLICATES (
+            BAM_SORT_SAMTOOLS.out.bam
+        )
+        ch_versions = ch_versions.mix(BAM_PICARD_MARKDUPLICATES.out.versions.first())
+
+        BEDTOOLS_BAMTOBED {
+            BAM_PICARD_MARKDUPLICATES.out.bam
+        }
+        ch_versions = ch_versions.mix(BEDTOOLS_BAMTOBED.out.versions.first())
+
+
+        PRESEQ_LCEXTRAP {
+            BEDTOOLS_BAMTOBED.out.bed
+        }
+        ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
+
+        sorted_bam_ch = BAM_PICARD_MARKDUPLICATES.out.bam
+
+    } else {
+        sorted_bam_ch = BAM_SORT_SAMTOOLS.out.bam
+    }
+
+
+
+    sorted_bam_ch.join(
         BAM_SORT_SAMTOOLS.out.bai
     ).map {
         meta, bam, bai -> [meta.taxid, meta, bam, bai] // taxid, meta, bam, bai
@@ -251,6 +283,12 @@ workflow ADNAMAP {
     }.set {
         synced_ch
     }
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Profiling and Genotyping
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
 
 
     DAMAGEPROFILER (
@@ -299,6 +337,11 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(DAMAGEPROFILER.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))
+    if (params.deduplicate == 'mark') {
+        ch_multiqc_files = ch_multiqc_files.mix(BAM_PICARD_MARKDUPLICATES.out.metrics.collect{it[1]}.ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
+    }
+
     MULTIQC (
         ch_multiqc_files.collect()
     )

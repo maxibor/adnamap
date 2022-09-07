@@ -1,5 +1,5 @@
 process FREEBAYES {
-    tag "${meta.id}_${meta.taxid}"
+    tag "${meta.id}"
     label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::freebayes=1.3.5" : null)
@@ -19,7 +19,7 @@ process FREEBAYES {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
     if (task.cpus > 1) {
         """

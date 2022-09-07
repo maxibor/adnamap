@@ -1,5 +1,5 @@
 process BCFTOOLS_CONSENSUS {
-    tag "$meta.id"
+    tag "${meta.id}"
     label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::bcftools=1.15.1" : null)
@@ -19,7 +19,7 @@ process BCFTOOLS_CONSENSUS {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     cat $fasta \\
         | bcftools \\

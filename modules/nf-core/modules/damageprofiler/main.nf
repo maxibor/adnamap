@@ -1,5 +1,5 @@
 process DAMAGEPROFILER {
-    tag "${meta.id}_${meta.taxid}"
+    tag "${meta.id}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::damageprofiler=1.1" : null)
@@ -19,7 +19,7 @@ process DAMAGEPROFILER {
 
     script:
     def args = task.ext.args   ?: ''
-    prefix   = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
+    prefix   = task.ext.prefix ?: "${meta.id}"
     """
     mv $bam ${prefix}.sam2lca.bam
     mv $bai ${prefix}.sam2lca.bai

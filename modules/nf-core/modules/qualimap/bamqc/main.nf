@@ -1,5 +1,5 @@
 process QUALIMAP_BAMQC {
-    tag "${meta.id}_${meta.genome_name}"
+    tag "${meta.id}"
     label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::qualimap=2.2.2d" : null)
@@ -19,7 +19,7 @@ process QUALIMAP_BAMQC {
 
     script:
     def args = task.ext.args   ?: ''
-    prefix   = task.ext.prefix ?: "${meta.id}_${meta.genome_name}"
+    prefix   = task.ext.prefix ?: "${meta.id}"
 
     """
     qualimap \\

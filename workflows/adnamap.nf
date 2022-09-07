@@ -168,8 +168,8 @@ workflow ADNAMAP {
         .map {
             meta_reads, reads, meta_genome, genome_index ->
                 [
-                    ['id': meta_reads.id + "_" + meta_genome.genome_name, 
-                     'genome_name': meta_genome.genome_name, 
+                    ['id': meta_reads.id + "_" + meta_genome.genome_name,
+                     'genome_name': meta_genome.genome_name,
                      'taxid': meta_genome.taxid,
                      'sample_name': meta_reads.id,
                      'single_end': meta_reads.single_end
@@ -242,7 +242,6 @@ workflow ADNAMAP {
     BAM_PICARD_MARKDUPLICATES (
         BAM_SORT_SAMTOOLS.out.bam
     )
-
     ch_versions = ch_versions.mix(BAM_PICARD_MARKDUPLICATES.out.versions.first())
 
     BEDTOOLS_BAMTOBED {
@@ -252,9 +251,8 @@ workflow ADNAMAP {
 
 
     PRESEQ_LCEXTRAP {
-        BAM_PICARD_MARKDUPLICATES.out.bam
+        BEDTOOLS_BAMTOBED.out.bed
     }
-
     ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
 
 

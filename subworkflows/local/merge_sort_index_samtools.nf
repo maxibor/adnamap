@@ -1,5 +1,6 @@
-include { SAMTOOLS_MERGE     } from  '../../modules/nf-core/modules/samtools/merge/main'
-include { BAM_SORT_SAMTOOLS as BAM_SORT_SAMTOOLS  } from '../nf-core/bam_sort_samtools/main'
+include { SAMTOOLS_MERGE } from  '../../modules/nf-core/modules/samtools/merge/main'
+include { SAMTOOLS_SORT  } from  '../../modules/nf-core/modules/samtools/sort/main'
+include { SAMTOOLS_INDEX } from  '../../modules/nf-core/modules/samtools/index/main'
 
 workflow MERGE_SORT_INDEX_SAMTOOLS {
     take:
@@ -8,15 +9,15 @@ workflow MERGE_SORT_INDEX_SAMTOOLS {
 
     ch_versions = Channel.empty()
 
-    SAMTOOLS_MERGE(ch_bam)
-    ch_versions = ch_versions.mix(SAMTOOLS_MERGE.out.versions)
+    SAMTOOLS_MERGE(ch_bam, [], [])
 
-    BAM_SORT_SAMTOOLS ( SAMTOOLS_MERGE.out.bam )
-    ch_versions = ch_versions.mix(BAM_SORT_SAMTOOLS.out.versions)
+    SAMTOOLS_SORT ( SAMTOOLS_MERGE.out.bam )
+    SAMTOOLS_INDEX ( SAMTOOLS_SORT.out.bam )
+    
+    ch_versions = ch_versions.mix(SAMTOOLS_MERGE.out.versions.first())
 
     emit:
-    bam = BAM_SORT_SAMTOOLS.out.bam
-    bai = BAM_SORT_SAMTOOLS.out.bai
-
+    bam = SAMTOOLS_SORT.out.bam
+    bai = SAMTOOLS_INDEX.out.bai
     versions = ch_versions
 }

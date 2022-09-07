@@ -165,10 +165,20 @@ workflow ADNAMAP {
         .combine(BOWTIE2_BUILD.out.index) // meta_genome, genome_index
         .map {
             meta_reads, reads, meta_genome, genome_index ->
-                [meta_reads + meta_genome, reads, genome_index]
+                [
+                    ['id': meta_reads.id + "_" + meta_genome.genome_name, 
+                     'genome_name': meta_genome.genome_name, 
+                     'taxid': meta_genome.taxid,
+                     'sample_name': meta_reads.id,
+                     'single_end': meta_reads.single_end
+
+                    ],
+                    reads,
+                    genome_index
+                ]
+                // [meta_reads + meta_genome , reads, genome_index]
         }
         .set { ch_reads_genomes }
-
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -184,8 +194,9 @@ workflow ADNAMAP {
     ALIGN_BOWTIE2.out.bam.join(
         ALIGN_BOWTIE2.out.bai
     ).map {
-        it -> [['id':it[0].id], it[1]] // id, bam
-    }.groupTuple().set { bams_synced }
+        meta, bam, bai -> [['id':meta.sample_name], bam] // meta.id, bam
+    }.groupTuple()
+    .set { bams_synced }
 
     MERGE_SORT_INDEX_SAMTOOLS (
         bams_synced
@@ -206,9 +217,16 @@ workflow ADNAMAP {
             def new_meta = [:]
                 new_meta['id'] = meta.id
                 new_meta['taxid'] = bam.baseName.toString().split("_taxid_")[-1].tokenize(".")[0]
-            [new_meta , bam]
+            [new_meta['id'], new_meta['taxid'] , bam]
     }
-    .set{ bam_split_by_ref} // id, taxid, bam
+    .join(
+        ch_reads_genomes.map {
+            meta, reads, genome_index -> [meta.sample_name, meta.taxid, meta]
+        }, by: [0, 1]
+    ).map {
+        sample_name, taxid, bam, meta -> [meta, bam]
+    }
+    .set{ bam_split_by_ref} // meta, bam
 
     BAM_SORT_SAMTOOLS {
         bam_split_by_ref
@@ -217,19 +235,19 @@ workflow ADNAMAP {
     BAM_SORT_SAMTOOLS.out.bam.join(
         BAM_SORT_SAMTOOLS.out.bai
     ).map {
-        it -> [it[0].taxid, it[0].id, it[1], it[2]] // taxid, id, bam, bai
+        meta, bam, bai -> [meta.taxid, meta, bam, bai] // taxid, meta, bam, bai
     }.combine(
         genomes_pre_processed
             .map{
-                it -> [it[0].taxid, it[1]] //taxid, fasta
+                meta, fasta -> [meta.taxid, fasta]//taxid, fasta
             }
-    , by: 0).combine(                      // taxid, id, bam, bai, fasta
+    , by: 0).combine(                      // taxid, meta, bam, bai, fasta
         SAMTOOLS_FAIDX.out.fai
             .map{
-                it -> [it[0].taxid, it[0].genome_name, it[1]] // taxid, genome_name, fai
+                meta, fai -> [meta.taxid, fai] // taxid, fai
             }
-    , by: 0).map{ //taxid, id, bam, bai, fasta, genome_name, fai
-        it -> [['id':it[1], 'taxid':it[0], 'genome_name':it[5]], it[2], it[3], it[4], it[6]] // meta, bam, bai, fasta, fai
+    , by: 0).map{ //taxid, meta, bam, bai, fasta, fai
+        taxid, meta, bam, bai, fasta, fai -> [meta, bam, bai, fasta, fai] // meta, bam, bai, fasta, fai
     }.set {
         synced_ch
     }
@@ -243,7 +261,7 @@ workflow ADNAMAP {
 
     QUALIMAP_BAMQC (
         synced_ch
-            .map{ it -> [it[0], it[1]] } // meta, bam
+            .map{ meta, bam, bai, fasta, fai  -> [meta, bam] } // meta, bam
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
 

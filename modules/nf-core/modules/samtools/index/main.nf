@@ -1,5 +1,5 @@
 process SAMTOOLS_INDEX {
-    tag "${meta.id}_${meta.taxid}"
+    tag "${meta.id}"
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::samtools=1.15.1" : null)
@@ -21,6 +21,7 @@ process SAMTOOLS_INDEX {
 
     script:
     def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     samtools \\
         index \\

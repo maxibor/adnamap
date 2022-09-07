@@ -1,5 +1,5 @@
 process SAMTOOLS_SORT {
-    tag "${meta.id}_${meta.taxid}"
+    tag "${meta.id}"
     label 'process_medium'
 
     conda (params.enable_conda ? "bioconda::samtools=1.15.1" : null)
@@ -19,7 +19,7 @@ process SAMTOOLS_SORT {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: meta.genome_name ? "${meta.id}_${meta.genome_name}" : "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     if ("$bam" == "${prefix}.sorted.bam") error "Input and output names are the same, use \"task.ext.prefix\" to disambiguate!"
     """
     samtools sort $args -@ $task.cpus -o ${prefix}.sorted.bam -T $prefix $bam

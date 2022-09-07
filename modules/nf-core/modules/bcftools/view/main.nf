@@ -28,7 +28,7 @@ process BCFTOOLS_VIEW {
     def samples_file =  samples ? "--samples-file ${samples}" : ""
     """
     bcftools view \\
-        --output ${prefix}.vcf.gz \\
+        --output ${prefix}.filtered.vcf.gz \\
         ${regions_file} \\
         ${targets_file} \\
         ${samples_file} \\

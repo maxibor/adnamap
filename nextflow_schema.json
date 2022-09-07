@@ -95,6 +95,95 @@
                 }
             }
         },
+        "sam2lca_options": {
+            "title": "sam2lca options",
+            "type": "object",
+            "description": "Options for Lowest Common Ancestor",
+            "default": "",
+            "properties": {
+                "sam2lca_db": {
+                    "type": "string",
+                    "default": "/Users/maxime/.sam2lca",
+                    "description": "Path to sam2lca database directory"
+                },
+                "sam2lca_acc2tax": {
+                    "type": "string",
+                    "default": "nucl",
+                    "description": "Type of acc2tax mapping"
+                },
+                "sam2lca_identity": {
+                    "type": "number",
+                    "default": 0.9
+                },
+                "sam2lca_split_rank": {
+                    "type": "string",
+                    "default": "species",
+                    "description": "Rank at which to split bam file per LCA"
+                },
+                "sam2lca_split_n": {
+                    "type": "integer",
+                    "default": 1000,
+                    "description": "Minimum number of reads matching LCA to write alignment file"
+                }
+            }
+        },
+        "variant_calling_options": {
+            "title": "Variant calling options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "freebayes_ploidy": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "Ploidy of the reference organism"
+                },
+                "freebayes_min_basequality": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "Minimum base quality of base to consider read for variant calling"
+                },
+                "freebayes_min_mapping_quality": {
+                    "type": "integer",
+                    "default": 30,
+                    "description": "Minimum mapping quality of base to consider read for variant calling"
+                },
+                "freebayes_min_coverage": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Minimum coverage at a site to call variant"
+                },
+                "freebayes_minallelefreq": {
+                    "type": "number",
+                    "default": 0.33,
+                    "description": "Minimum alternative allele frequency to call variant"
+                },
+                "freebayes_limit_coverage": {
+                    "type": "integer",
+                    "default": 30,
+                    "description": "Subsample higher coverage to limit"
+                },
+                "freebayes_report_all_sites": {
+                    "type": "string",
+                    "default": "true"
+                },
+                "bcftools_view_high_variant_quality": {
+                    "type": "integer",
+                    "default": 30,
+                    "description": "High variant quality threshold"
+                },
+                "bcftools_view_medium_variant_quality": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "Medium variant quality threshold"
+                },
+                "bcftools_view_minimal_allelesupport": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Minimum allele support to call variant"
+                }
+            }
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -273,6 +362,12 @@
         },
         {
             "$ref": "#/definitions/pipeline_options"
+        },
+        {
+            "$ref": "#/definitions/sam2lca_options"
+        },
+        {
+            "$ref": "#/definitions/variant_calling_options"
         },
         {
             "$ref": "#/definitions/institutional_config_options"

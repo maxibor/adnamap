@@ -250,9 +250,16 @@ workflow ADNAMAP {
         }
         ch_versions = ch_versions.mix(BEDTOOLS_BAMTOBED.out.versions.first())
 
+        ch_bed_for_preseq = BEDTOOLS_BAMTOBED.out.bed.map{
+            meta, bed ->
+                def new_meta = meta.clone()
+                new_meta['single_end'] = true
+
+            [new_meta, bed]
+        }
 
         PRESEQ_LCEXTRAP {
-            BEDTOOLS_BAMTOBED.out.bed
+            ch_bed_for_preseq.dump()
         }
         ch_versions = ch_versions.mix(PRESEQ_LCEXTRAP.out.versions.first())
 

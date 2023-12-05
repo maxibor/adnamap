@@ -1,4 +1,4 @@
-name: adnamap CI
+name: nf-core CI
 # This workflow runs the pipeline with the minimal test dataset to check that it completes without any syntax errors
 on:
   push:
@@ -11,31 +11,35 @@ on:
 
 env:
   NXF_ANSI_LOG: false
-  CAPSULE_LOG: none
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
 
 jobs:
   test:
     name: Run pipeline with test data
+    # Only run on push if this is the nf-core dev branch (merged PRs)
     if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'maxibor/adnamap') }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Nextflow versions
-        include:
-          - NXF_VER: "21.10.3"
-            NXF_EDGE: ""
-          - NXF_VER: ""
-            NXF_EDGE: "1"
+        NXF_VER:
+          - "23.04.0"
+          - "latest-everything"
     steps:
+      - name: Free some space
+        run: |
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
       - name: Check out pipeline code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Nextflow
-        env:
-          NXF_VER: ${{ matrix.NXF_VER }}
-        run: |
-          wget -qO- get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
+        uses: nf-core/setup-nextflow@v1
+        with:
+          version: "${{ matrix.NXF_VER }}"
 
       - name: Run pipeline with test data
         run: |

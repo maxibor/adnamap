@@ -72,7 +72,7 @@ include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_sam
 include { SAMTOOLS_FAIDX                                   } from '../modules/nf-core/samtools/faidx/main'
 include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/fastqc/main'
 include { FASTP                                            } from '../modules/nf-core/fastp/main'
-include { GUNZIP                                           } from '../modules/nf-core/gunzip/main'
+include { GUNZIP as GUNZIP4IDX ; GUNZIP as GUNZIP4GENOME   } from '../modules/nf-core/gunzip/main'
 include { UNTAR                                            } from '../modules/nf-core/untar/main'
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/bowtie2/build/main'
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
@@ -132,7 +132,6 @@ workflow ADNAMAP {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-
     genomes
         .branch {
             decompressed: it[1].toString().tokenize(".")[-1] != 'gz' && it[2].isEmpty()
@@ -140,42 +139,66 @@ workflow ADNAMAP {
             has_index_decompressed: ! it[2].isEmpty() && it[2].toString().tokenize(".")[-1] != 'gz'
             has_index_compressed: ! it[2].isEmpty() && it[2].toString().tokenize(".")[-1] == 'gz'
         }
-        .set { genomes_fork }
+        .set { genomes_idx_fork }
 
-    GUNZIP (
-        genomes_fork.compressed.map {
+    genomes
+        .branch {
+            decompressed: it[1].toString().tokenize(".")[-1] != 'gz' && ! it[2].isEmpty()
+            compressed: it[1].toString().tokenize(".")[-1] == 'gz' && ! it[2].isEmpty()
+        }
+        .set { genomes_fasta_fork }
+
+    GUNZIP4IDX (
+        genomes_idx_fork.compressed
+        .map {
             genome_meta, fasta, index -> [genome_meta, fasta]
         }
     )
 
     UNTAR(
-        genomes_fork.has_index_compressed.map {
+        genomes_idx_fork.has_index_compressed.map {
             meta, genome_fasta, genome_index ->
             [meta, genome_index]
         }
     )
 
-    GUNZIP.out.gunzip
-        .mix(genomes_fork.decompressed)
+    GUNZIP4IDX.out.gunzip
+        .mix(genomes_idx_fork.decompressed)
         .set { genomes_pre_processed }
-
-    SAMTOOLS_FAIDX (
-        genomes_pre_processed
-    )
 
     BOWTIE2_BUILD (
         genomes_pre_processed
     )
 
     ch_indices = BOWTIE2_BUILD.out.index.mix(
-            genomes_fork.has_index_decompressed
+            genomes_idx_fork.has_index_decompressed
             .map {
                 meta_genome, genome_fasta, genome_index ->
                 [meta_genome, genome_index]
             }
         ).mix (
-                UNTAR.untar
+                UNTAR.out.untar
         )
+
+    GUNZIP4GENOME (
+        genomes_fasta_fork.compressed
+        .map {
+            genome_meta, fasta, index -> [genome_meta, fasta]
+        }
+    )
+
+    GUNZIP4GENOME.out.gunzip.mix (
+        genomes_fasta_fork.decompressed.map {
+            genome_meta, fasta, index -> [genome_meta, fasta]
+        }
+    ).mix (
+        genomes_pre_processed
+    ) .set { ch_genomes }
+
+
+    SAMTOOLS_FAIDX (
+        ch_genomes
+    )
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,7 +283,7 @@ workflow ADNAMAP {
     ).map {
         meta, bam, bai -> [meta.taxid, meta, bam, bai] // taxid, meta, bam, bai
     }.combine(
-        genomes_pre_processed
+        ch_genomes
             .map{
                 meta, fasta -> [meta.taxid, fasta]//taxid, fasta
             }

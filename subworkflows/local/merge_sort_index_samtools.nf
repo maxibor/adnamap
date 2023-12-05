@@ -1,6 +1,6 @@
-include { SAMTOOLS_MERGE } from  '../../modules/nf-core/modules/samtools/merge/main'
-include { SAMTOOLS_SORT  } from  '../../modules/nf-core/modules/samtools/sort/main'
-include { SAMTOOLS_INDEX } from  '../../modules/nf-core/modules/samtools/index/main'
+include { SAMTOOLS_MERGE } from  '../../modules/nf-core/samtools/merge/main'
+include { SAMTOOLS_SORT  } from  '../../modules/nf-core/samtools/sort/main'
+include { SAMTOOLS_INDEX } from  '../../modules/nf-core/samtools/index/main'
 
 workflow MERGE_SORT_INDEX_SAMTOOLS {
     take:
@@ -13,7 +13,7 @@ workflow MERGE_SORT_INDEX_SAMTOOLS {
 
     SAMTOOLS_SORT ( SAMTOOLS_MERGE.out.bam )
     SAMTOOLS_INDEX ( SAMTOOLS_SORT.out.bam )
-    
+
     ch_versions = ch_versions.mix(SAMTOOLS_MERGE.out.versions.first())
 
     emit:

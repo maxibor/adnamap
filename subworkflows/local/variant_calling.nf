@@ -1,10 +1,10 @@
-include { FREEBAYES } from '../../modules/nf-core/modules/freebayes/main'
+include { FREEBAYES } from '../../modules/nf-core/freebayes/main'
 include { BCFTOOLS_INDEX as BCFTOOLS_INDEX_PRE;
           BCFTOOLS_INDEX as BCFTOOLS_INDEX_POST
-        } from '../../modules/nf-core/modules/bcftools/index/main'
-include { BCFTOOLS_VIEW      } from '../../modules/nf-core/modules/bcftools/view/main'
-include { BCFTOOLS_STATS     } from '../../modules/nf-core/modules/bcftools/stats/main'
-include { BCFTOOLS_CONSENSUS } from '../../modules/nf-core/modules/bcftools/consensus/main'
+        } from '../../modules/nf-core/bcftools/index/main'
+include { BCFTOOLS_VIEW      } from '../../modules/nf-core/bcftools/view/main'
+include { BCFTOOLS_STATS     } from '../../modules/nf-core/bcftools/stats/main'
+include { BCFTOOLS_CONSENSUS } from '../../modules/nf-core/bcftools/consensus/main'
 
 
 workflow VARIANT_CALLING {
@@ -25,7 +25,7 @@ workflow VARIANT_CALLING {
     )
 
     BCFTOOLS_STATS (
-        FREEBAYES.out.vcf, []
+        FREEBAYES.out.vcf.join(BCFTOOLS_INDEX_PRE.out.tbi), [], [], [], [], []
     )
 
     BCFTOOLS_VIEW (

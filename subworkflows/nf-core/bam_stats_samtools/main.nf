@@ -3,9 +3,9 @@
 //
 
 
-include { SAMTOOLS_STATS as SAMTOOLS_STATS    } from '../../../modules/nf-core/modules/samtools/stats/main'
-include { SAMTOOLS_IDXSTATS as SAMTOOLS_IDXSTATS } from '../../../modules/nf-core/modules/samtools/idxstats/main'
-include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT } from '../../../modules/nf-core/modules/samtools/flagstat/main'
+include { SAMTOOLS_STATS as SAMTOOLS_STATS    } from '../../../modules/nf-core/samtools/stats/main'
+include { SAMTOOLS_IDXSTATS as SAMTOOLS_IDXSTATS } from '../../../modules/nf-core/samtools/idxstats/main'
+include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT } from '../../../modules/nf-core/samtools/flagstat/main'
 
 workflow BAM_STATS_SAMTOOLS {
     take:

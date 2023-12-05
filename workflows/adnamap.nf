@@ -22,7 +22,7 @@ if (params.genomes) { ch_genomes = Channel.fromPath(params.genomes) } else { exi
 */
 ch_genomes
     .splitCsv(header:true, sep:',')
-    .map { row -> [["genome_name": row.genome_name, "taxid": row.taxid], file(row.genome_path)] }
+    .map { row -> [ ["genome_name": row.genome_name, "taxid": row.taxid], file(row.genome_path), file(row.genome_index, type: 'dir') ] }
     .set { genomes }
 
 /*
@@ -69,17 +69,17 @@ include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_sam
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { SAMTOOLS_FAIDX                                   } from '../modules/nf-core/modules/samtools/faidx/main'
-include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/modules/fastqc/main'
-include { FASTP                                            } from '../modules/nf-core/modules/fastp/main'
-include { GUNZIP                                           } from '../modules/nf-core/modules/gunzip/main'
-include { BOWTIE2_BUILD                                    } from '../modules/nf-core/modules/bowtie2/build/main'
+include { SAMTOOLS_FAIDX                                   } from '../modules/nf-core/samtools/faidx/main'
+include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/fastqc/main'
+include { FASTP                                            } from '../modules/nf-core/fastp/main'
+include { GUNZIP                                           } from '../modules/nf-core/gunzip/main'
+include { BOWTIE2_BUILD                                    } from '../modules/nf-core/bowtie2/build/main'
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
-include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/modules/samtools/index/main'
-include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/modules/qualimap/bamqc/main'
-include { DAMAGEPROFILER                                   } from '../modules/nf-core/modules/damageprofiler/main'
-include { MULTIQC                                          } from '../modules/nf-core/modules/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
+include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/samtools/index/main'
+include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/qualimap/bamqc/main'
+include { DAMAGEPROFILER                                   } from '../modules/nf-core/damageprofiler/main'
+include { MULTIQC                                          } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,7 +117,7 @@ workflow ADNAMAP {
     ch_versions = ch_versions.mix(FASTQC_BEFORE.out.versions.first())
 
     FASTP (
-        INPUT_CHECK.out.reads, params.save_trimmed_fail, params.save_merged
+        INPUT_CHECK.out.reads, [], params.save_trimmed_fail, params.save_merged
     )
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
@@ -131,15 +131,19 @@ workflow ADNAMAP {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
+
     genomes
         .branch {
-            decompressed: it[1].toString().tokenize(".")[-1] != 'gz'
-            compressed: it[1].toString().tokenize(".")[-1] == 'gz'
+            decompressed: it[1].toString().tokenize(".")[-1] != 'gz' && it[2].isEmpty()
+            compressed: it[1].toString().tokenize(".")[-1] == 'gz' && it[2].isEmpty()
+            has_index: ! it[2].isEmpty()
         }
-        .set { genomes_fork}
+        .set { genomes_fork }
 
     GUNZIP (
-        genomes_fork.compressed
+        genomes_fork.compressed.map {
+            genome_meta, fasta, index -> [genome_meta, fasta]
+        }
     )
 
     GUNZIP.out.gunzip
@@ -154,6 +158,13 @@ workflow ADNAMAP {
         genomes_pre_processed
     )
 
+    ch_indices = BOWTIE2_BUILD.out.index.mix(
+            genomes_fork.has_index.map {
+                meta_genome, genome_fasta, genome_index ->
+                [meta_genome, genome_index]
+            }
+        )
+
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Mixing read and reference channel
@@ -162,16 +173,16 @@ workflow ADNAMAP {
 
 
     FASTP.out.reads_merged.mix(FASTP.out.reads) // meta_reads, merged_reads
-        .combine(BOWTIE2_BUILD.out.index) // meta_genome, genome_index
+        .combine(ch_indices) // meta_genome, genome_index
         .map {
             meta_reads, reads, meta_genome, genome_index ->
                 [
-                    ['id': meta_reads.id + "_" + meta_genome.genome_name, 
-                     'genome_name': meta_genome.genome_name, 
-                     'taxid': meta_genome.taxid,
-                     'sample_name': meta_reads.id,
-                     'single_end': meta_reads.single_end
-
+                    [
+                        'id': meta_reads.id + "_" + meta_genome.genome_name,
+                        'genome_name': meta_genome.genome_name,
+                        'taxid': meta_genome.taxid,
+                        'sample_name': meta_reads.id,
+                        'single_end': meta_reads.single_end
                     ],
                     reads,
                     genome_index

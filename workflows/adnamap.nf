@@ -174,7 +174,7 @@ workflow ADNAMAP {
                 [meta_genome, genome_index]
             }
         ).mix (
-                UNTAR.untar
+                UNTAR.out.untar
         )
 
     /*

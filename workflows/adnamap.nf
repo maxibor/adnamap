@@ -217,7 +217,7 @@ workflow ADNAMAP {
                         'genome_name': meta_genome.genome_name,
                         'taxid': meta_genome.taxid,
                         'sample_name': meta_reads.id,
-                        'single_end': meta_reads.single_end
+                        'single_end': params.save_merged ? true : meta.single_end
                     ],
                     reads,
                     genome_index

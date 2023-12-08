@@ -27,16 +27,6 @@ ch_genomes
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CREATE DB CHANNEL
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-Channel
-    .fromPath(params.sam2lca_db)
-    .first()
-    .set { sam2lca_db }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -58,7 +48,7 @@ include { ALIGN_BOWTIE2             } from '../subworkflows/nf-core/align_bowtie
 include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_index_samtools'
 include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
 include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
-
+include { SAM2LCA_DB                } from '../subworkflows/local/sam2lca_db'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,6 +115,7 @@ workflow ADNAMAP {
     FASTQC_AFTER (
         FASTP.out.reads_merged.mix(FASTP.out.reads)
     )
+
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -199,6 +190,27 @@ workflow ADNAMAP {
     SAMTOOLS_FAIDX (
         ch_genomes
     )
+
+    /*
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    SAM2LCA DB building
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    if (params.sam2lca_db) {
+        sam2lca_db = Channel.fromPath(params.sam2lca_db, checkIfExists: true, type: 'dir')
+    } else {
+        taxo_nodes = Channel.fromPath(params.taxo_nodes, checkIfExists: true)
+        taxo_names = Channel.fromPath(params.taxo_names, checkIfExists: true)
+        taxo_merged = Channel.fromPath(params.taxo_merged, checkIfExists: true)
+        SAM2LCA_DB (
+            ch_genomes,
+            taxo_nodes.first(),
+            taxo_names.first(),
+            taxo_merged.first()
+        )
+
+        sam2lca_db = SAM2LCA_DB.out.sam2lca_db
+    }
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

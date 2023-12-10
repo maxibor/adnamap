@@ -6,7 +6,7 @@
 816	|	Bacteroides	|		|	scientific name	|
 816	|	Capsularis Prevot 1938 (Approved Lists 1980)	|		|	authority	|
 816	|	Capsularis	|		|	synonym	|
-816	|	"Ristella" Prevot 1938	|		|	authority	|
+816	|	Ristella Prevot 1938	|		|	authority	|
 816	|	Ristella	|	Ristella <CFB group bacteria>	|	synonym	|
 815	|	Bacteroidaceae Pribram 1933	|		|	authority	|
 815	|	Bacteroidaceae	|		|	scientific name	|
@@ -50,11 +50,11 @@
 1206109	|	Candidatus Portiera aleyrodidarum BT-B-HRs	|		|	scientific name	|
 91844	|	Bemisia tabaci primary endosymbiont	|		|	synonym	|
 91844	|	Candidatus Portiera aleyrodidarum	|		|	scientific name	|
-91844	|	"Candidatus Portiera aleyrodidarum" Thao and Baumann 2004	|		|	authority	|
+91844	|	Candidatus Portiera aleyrodidarum Thao and Baumann 2004	|		|	authority	|
 91844	|	Portiera aleyrodidarum	|		|	equivalent name	|
 91844	|	primary endosymbiont of Bemisia tabaci	|		|	synonym	|
 235572	|	Candidatus Portiera	|		|	scientific name	|
-235572	|	"Candidatus Portiera" Thao and Baumann 2004	|		|	authority	|
+235572	|	Candidatus Portiera Thao and Baumann 2004	|		|	authority	|
 235572	|	Portiera	|		|	equivalent name	|
 235572	|	whitefly endosymbionts	|		|	synonym	|
 114403	|	Zymobacter group	|		|	scientific name	|
@@ -82,7 +82,7 @@
 1224	|	Proteobacteria [class] Stackebrandt et al. 1988	|		|	authority	|
 1224	|	Proteobacteria Garrity et al. 2005	|		|	authority	|
 1224	|	Proteobacteria	|		|	scientific name	|
-1224	|	"Proteobacteriota" Panda et al. 2022	|		|	authority	|
+1224	|	Proteobacteriota Panda et al. 2022	|		|	authority	|
 1224	|	Proteobacteriota	|		|	synonym	|
 1224	|	purple bacteria and relatives	|		|	common name	|
 1224	|	purple bacteria	|		|	common name	|
@@ -94,38 +94,39 @@
 817	|	Bacillus fragilis Veillon and Zuber 1898	|		|	authority	|
 817	|	Bacteroides fragilis	|		|	scientific name	|
 817	|	Bacteroides fragilis (Veillon and Zuber 1898) Castellani and Chalmers 1919 (Approved Lists 1980) emend. Hahnke et al. 2016	|		|	authority	|
-817	|	"Bacteroides inaequalis" Eggerth and Gagnon 1933	|		|	authority	|
+817	|	Bacteroides inaequalis Eggerth and Gagnon 1933	|		|	authority	|
 817	|	Bacteroides inaequalis	|		|	synonym	|
-817	|	"Bacteroides incommunis" Eggerth and Gagnon 1933	|		|	authority	|
+817	|	Bacteroides incommunis Eggerth and Gagnon 1933	|		|	authority	|
 817	|	Bacteroides incommunis	|		|	synonym	|
 817	|	Bacteroides sp. 2_1_16	|		|	includes	|
 817	|	Bacteroides sp. 2_1_56FAA	|		|	includes	|
-817	|	"Bacteroides uncatus" Eggerth and Gagnon 1933	|		|	authority	|
+817	|	Bacteroides uncatus Eggerth and Gagnon 1933	|		|	authority	|
 817	|	Bacteroides uncatus	|		|	synonym	|
 817	|	CCUG 4856	|	CCUG 4856 <type strain>	|	type material	|
 817	|	CIP 77.16	|	CIP 77.16 <type strain>	|	type material	|
 817	|	DSM 2151	|	DSM 2151 <type strain>	|	type material	|
 817	|	Fusiformis fragilis	|		|	synonym	|
-817	|	"Fusiformis fragilis" Topley and Wilson 1929	|		|	authority	|
+817	|	Fusiformis fragilis Topley and Wilson 1929	|		|	authority	|
 817	|	JCM 11019	|	JCM 11019 <type strain>	|	type material	|
 817	|	LMG 10263	|	LMG 10263 <type strain>	|	type material	|
 817	|	LMG:10263	|	LMG:10263 <type strain>	|	type material	|
 817	|	NCTC 9343	|	NCTC 9343 <type strain>	|	type material	|
-817	|	"Pseudobacterium fragilis" Krasil'nikov 1949	|		|	authority	|
+817	|	Pseudobacterium fragilis Krasil'nikov 1949	|		|	authority	|
 817	|	Pseudobacterium fragilis	|		|	synonym	|
-817	|	"Pseudobacterium inaequalis" (Eggerth and Gagnon 1933) Krasil'nikov 1949	|		|	authority	|
+817	|	Pseudobacterium inaequalis (Eggerth and Gagnon 1933) Krasil'nikov 1949	|		|	authority	|
 817	|	Pseudobacterium inaequalis	|		|	synonym	|
-817	|	"Pseudobacterium incommunis" (Eggerth and Gagnon 1933) Krasil'nikov 1949	|		|	authority	|
+817	|	Pseudobacterium incommunis (Eggerth and Gagnon 1933) Krasil'nikov 1949	|		|	authority	|
 817	|	Pseudobacterium incommunis	|		|	synonym	|
-817	|	"Pseudobacterium uncatum" (Eggerth and Gagnon 1933) Krasil'nikov 1949	|		|	authority	|
+817	|	Pseudobacterium uncatum (Eggerth and Gagnon 1933) Krasil'nikov 1949	|		|	authority	|
 817	|	Pseudobacterium uncatum	|		|	synonym	|
-817	|	"Ristella fragilis" Prevot 1938	|		|	authority	|
+817	|	Ristella fragilis Prevot 1938	|		|	authority	|
 817	|	Ristella fragilis	|		|	synonym	|
-817	|	"Ristella incommunis" (Eggerth and Gagnon 1933) Prevot 1938	|		|	authority	|
+817	|	Ristella incommunis (Eggerth and Gagnon 1933) Prevot 1938	|		|	authority	|
 817	|	Ristella incommunis	|		|	synonym	|
-817	|	"Ristella uncata" (Eggerth and Gagnon 1933) Prevot 1938	|		|	authority	|
+817	|	Ristella uncata (Eggerth and Gagnon 1933) Prevot 1938	|		|	authority	|
 817	|	Ristella uncata	|		|	synonym	|
-817	|	"Sphaerophorus inaequalis" (Eggerth and Gagnon 1933) Prevot 1938	|		|	authority	|
+817	|	Sphaerophorus inaequalis (Eggerth and Gagnon 1933) Prevot 1938	|		|	authority	|
 817	|	Sphaerophorus inaequalis	|		|	synonym	|
-817	|	"Sphaerophorus intermedius" Bergan and Hovig 1968	|		|	authority	|
+817	|	Sphaerophorus intermedius Bergan and Hovig 1968	|		|	authority	|
 817	|	Sphaerophorus intermedius	|		|	synonym	|
+12908	|	Unclassified sequences	|		|	scientific name	|

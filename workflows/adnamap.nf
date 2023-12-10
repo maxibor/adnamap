@@ -264,7 +264,7 @@ workflow ADNAMAP {
         MERGE_SORT_INDEX_SAMTOOLS.out.bam.join(
             MERGE_SORT_INDEX_SAMTOOLS.out.bai
         ),
-        sam2lca_db
+        sam2lca_db.first()
     )
 
 

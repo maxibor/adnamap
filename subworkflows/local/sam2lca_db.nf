@@ -1,5 +1,5 @@
 include { CREATE_ACC2TAX } from '../../modules/local/create_acc2tax'
-include { SAM2LCA_BUILD } from '../modules/local/sam2lca/build/main'
+include { SAM2LCA_BUILD } from '../../modules/local/sam2lca/build/main'
 
 workflow SAM2LCA_DB {
     take:
@@ -12,7 +12,7 @@ workflow SAM2LCA_DB {
         CREATE_ACC2TAX(genomes)
 
         acc2tax = CREATE_ACC2TAX.out.acc2tax.collectFile(
-            name: 'adnamap.accession2taxid'
+            name: 'adnamap.accession2taxid',
             keepHeader: true
         )
 

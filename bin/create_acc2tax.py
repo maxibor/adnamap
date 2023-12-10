@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import pysam
 from pathlib import Path
@@ -19,7 +21,7 @@ def acc2tax(genome, taxid):
     with open(f"{taxid}.accession2taxid", "w") as fh:
         fh.write("accession\taccession.version\ttaxid\n")
         for k, v in entry_dict.items():
-            fh.write(f"{k}\t{v[0]}\t{v[1]}\n")
+            fh.write(f"{v[0]}\t{k}\t{v[1]}\n")
 
 
 if __name__ == "__main__":

@@ -76,30 +76,33 @@ flowchart TD
         bowtie2_build --Bowtie 2 index--> bowtie2_align
         fastp --Trimmed fastq--> bowtie2_align
     end
+    subgraph lca[LCA]
+      bowtie2_align --samtools merge--> merged_BAM["Merged BAM per sample"]
+      merged_BAM --sam2lca--> rank_BAM["taxon rank specific BAM"]
+    end
     subgraph alignment_post[Alignment post_processing]
         qualimap[Alignment stats reporting]
         damageprofiler[DamageProfiler: aDNA stats]
         fasta--decompressed-->damageprofiler
         gunzip-->damageprofiler
-        bowtie2_align--BAM+index-->damageprofiler
-        bowtie2_align--BAM+index-->qualimap
+        rank_BAM--BAM+index-->damageprofiler
+        rank_BAM--BAM+index-->qualimap
     end
     subgraph variant_calling[Variant calling]
         snpAD["snpAD: ancient DNA damage aware genotyper"]
         freebayes["Freebayes: genotyper"]
 
-        bowtie2_align--BAM+index-->snpAD
-        bowtie2_align--BAM+index-->freebayes
+        rank_BAM--BAM+index-->snpAD
+        rank_BAM--BAM+index-->freebayes
         fasta--decompressed-->snpAD
         gunzip-->freebayes
         faidx-->freebayes
         fasta--decompressed-->snpAD
         gunzip-->freebayes
         faidx-->snpAD
-        vcf1{VCF}
-        vcf2{VCF}
-        snpAD --> vcf1
-        freebayes --> vcf2
+        vcf{VCF}
+        freebayes --> vcf
+        vcf-- bcftools consensus -->cons_fa["Consensus genome fasta"]
     end
 ```
 

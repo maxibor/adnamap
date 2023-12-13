@@ -71,7 +71,7 @@ include { QUALIMAP_BAMQC                                   } from '../modules/nf
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/damageprofiler/main'
 include { MULTIQC                                          } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-
+include { SAM2LCA_MERGE                                    } from '../modules/local/sam2lca_merge'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -267,6 +267,15 @@ workflow ADNAMAP {
         sam2lca_db.first()
     )
 
+    SAM2LCA_MERGE (
+        SAM2LCA.out.csv
+            .map {
+                meta, csv ->
+                [ csv ]
+            }
+            .collect(),
+        params.sam2lca_split_rank
+    )
 
     SAM2LCA.out.bam
     .transpose()
@@ -323,11 +332,13 @@ workflow ADNAMAP {
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
 
-    VARIANT_CALLING (
+    if (! params.skip_variant_calling) {
+        VARIANT_CALLING (
         synced_ch
     )
+        ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
+    }
 
-    ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -356,7 +367,10 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(DAMAGEPROFILER.out.results.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))
+    if ( ! params.skip_variant_calling) {
+        ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))
+    }
+
     MULTIQC (
         ch_multiqc_files.collect()
     )

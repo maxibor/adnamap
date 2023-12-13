@@ -129,7 +129,13 @@
                 "sam2lca_identity": {
                     "type": "number",
                     "default": 0.9,
-                    "description": "Sequence identity threshold for LCA"
+                    "description": "Sequence identity threshold for LCA",
+                    "minimum": 0,
+                    "maximum": 1
+                },
+                "sam2lca_edit": {
+                    "type": "integer",
+                    "description": "Edit distance threshold"
                 },
                 "sam2lca_split_rank": {
                     "type": "string",
@@ -149,6 +155,10 @@
             "description": "",
             "default": "",
             "properties": {
+                "skip_variant_calling": {
+                    "type": "boolean",
+                    "description": "Skip variant calling"
+                },
                 "freebayes_ploidy": {
                     "type": "integer",
                     "default": 1,

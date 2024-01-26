@@ -78,7 +78,12 @@
                 "deduplicate": {
                     "type": "string",
                     "default": "true",
-                    "description": "Perform deduplication with fastp"
+                    "description": "Perform deduplication with fastp (or samtools markdup if complexity estimation is enabled)"
+                },
+                "estimate_complexity":{
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Estimate complexity of library using Preseq"
                 },
                 "damageprofiler_length": {
                     "type": "integer",

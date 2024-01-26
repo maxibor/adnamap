@@ -49,7 +49,7 @@ include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_ind
 include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
 include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
 include { SAM2LCA_DB                } from '../subworkflows/local/sam2lca_db'
-
+include { SAMTOOLS_REMOVE_DUP       } from '../subworkflows/local/samtools_remove_dup'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -65,6 +65,7 @@ include { FASTP                                            } from '../modules/nf
 include { GUNZIP as GUNZIP4IDX ; GUNZIP as GUNZIP4GENOME   } from '../modules/nf-core/gunzip/main'
 include { UNTAR                                            } from '../modules/nf-core/untar/main'
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/bowtie2/build/main'
+include { PRESEQ_LCEXTRAP                                  } from '../modules/nf-core/preseq/lcextrap/main'
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
 include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/samtools/index/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/qualimap/bamqc/main'
@@ -249,12 +250,29 @@ workflow ADNAMAP {
     )
     ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
 
-    ALIGN_BOWTIE2.out.bam.join(
-        ALIGN_BOWTIE2.out.bai
-    ).map {
-        meta, bam, bai -> [['id':meta.sample_name], bam] // meta.id, bam
-    }.groupTuple()
-    .set { bams_synced }
+
+    if (params.estimate_complexity) {
+        PRESEQ_LCEXTRAP(
+            ALIGN_BOWTIE2.out.bam
+        )
+    }
+
+    if (params.estimate_complexity && params.deduplicate){
+        SAMTOOLS_REMOVE_DUP (
+            ALIGN_BOWTIE2.out.bam.join(
+                ALIGN_BOWTIE2.out.bai
+            )
+        )
+
+        bams_synced = SAMTOOLS_REMOVE_DUP.out.bam.map {
+            meta, bam -> [['id':meta.sample_name], bam] // meta.id, bam
+        }.groupTuple()
+
+    } else {
+        bams_synced = ALIGN_BOWTIE2.out.bam.map {
+            meta, bam, bai -> [['id':meta.sample_name], bam] // meta.id, bam
+        }.groupTuple()
+    }
 
     MERGE_SORT_INDEX_SAMTOOLS (
         bams_synced
@@ -317,6 +335,16 @@ workflow ADNAMAP {
         taxid, meta, bam, bai, fasta, fai -> [meta, bam, bai, fasta, fai] // meta, bam, bai, fasta, fai
     }.set {
         synced_ch
+    }
+
+    if ( !params.mapstats_skip_preseq && params.mapstats_preseq_mode == 'c_curve') {
+        PRESEQ_CCURVE(ch_reads_for_deduplication.map{[it[0],it[1]]})
+        ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_CCURVE.out.c_curve.collect{it[1]}.ifEmpty([]))
+        ch_versions = ch_versions.mix( PRESEQ_CCURVE.out.versions )
+    } else ( !params.mapstats_skip_preseq && params.mapstats_preseq_mode == 'lc_extrap') {
+        PRESEQ_LCEXTRAP(ch_reads_for_deduplication.map{[it[0],it[1]]})
+        ch_multiqc_files = ch_multiqc_files.mix(PRESEQ_LCEXTRAP.out.lc_extrap.collect{it[1]}.ifEmpty([]))
+        ch_versions = ch_versions.mix( PRESEQ_LCEXTRAP.out.versions )
     }
 
 

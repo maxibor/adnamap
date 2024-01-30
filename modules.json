@@ -75,6 +75,16 @@
                         "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
                         "installed_by": ["modules"]
                     },
+                    "preseq/ccurve": {
+                        "branch": "master",
+                        "git_sha": "575e1bc54b083fb15e7dd8b5fcc40bea60e8ce83",
+                        "installed_by": ["modules"]
+                    },
+                    "preseq/lcextrap": {
+                        "branch": "master",
+                        "git_sha": "9a88058962c0ee1715f2ad0e017c37e0cd75e532",
+                        "installed_by": ["modules"]
+                    },
                     "qualimap/bamqc": {
                         "branch": "master",
                         "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe",
@@ -83,6 +93,11 @@
                     "samtools/faidx": {
                         "branch": "master",
                         "git_sha": "3eb99152cedbb7280258858e5df08478a4670696",
+                        "installed_by": ["modules"]
+                    },
+                    "samtools/fixmate": {
+                        "branch": "master",
+                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
                         "installed_by": ["modules"]
                     },
                     "samtools/flagstat": {
@@ -100,6 +115,11 @@
                         "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773",
                         "installed_by": ["bam_sort_samtools"]
                     },
+                    "samtools/markdup": {
+                        "branch": "master",
+                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
+                        "installed_by": ["modules"]
+                    },
                     "samtools/merge": {
                         "branch": "master",
                         "git_sha": "e9bc33485e420b51cfbed3cf63ac7463cd5739d3",
@@ -114,6 +134,11 @@
                         "branch": "master",
                         "git_sha": "f4eab7945952dc4934224309701a49913ea05ae6",
                         "installed_by": ["bam_stats_samtools"]
+                    },
+                    "samtools/view": {
+                        "branch": "master",
+                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
+                        "installed_by": ["modules"]
                     },
                     "untar": {
                         "branch": "master",

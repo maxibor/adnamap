@@ -22,7 +22,7 @@ if (params.genomes) { ch_genomes = Channel.fromPath(params.genomes) } else { exi
 */
 ch_genomes
     .splitCsv(header:true, sep:',')
-    .map { row -> [ ["genome_name": row.genome_name, "taxid": row.taxid], file(row.genome_path), file(row.genome_index, type: 'dir') ] }
+    .map { row -> [ ["genome_name": row.genome_name, "taxid": row.taxid, "ploidy": row.ploidy], file(row.genome_path), file(row.genome_index, type: 'dir') ] }
     .set { genomes }
 
 /*
@@ -49,7 +49,7 @@ include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_ind
 include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
 include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
 include { SAM2LCA_DB                } from '../subworkflows/local/sam2lca_db'
-
+include { SAMTOOLS_REMOVE_DUP       } from '../subworkflows/local/samtools_remove_dup'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -65,6 +65,9 @@ include { FASTP                                            } from '../modules/nf
 include { GUNZIP as GUNZIP4IDX ; GUNZIP as GUNZIP4GENOME   } from '../modules/nf-core/gunzip/main'
 include { UNTAR                                            } from '../modules/nf-core/untar/main'
 include { BOWTIE2_BUILD                                    } from '../modules/nf-core/bowtie2/build/main'
+include { PRESEQ_LCEXTRAP                                  } from '../modules/nf-core/preseq/lcextrap/main'
+include { PRESEQ_CCURVE                                    } from '../modules/nf-core/preseq/ccurve/main'
+include { PLOT_PRESEQ                                      } from '../modules/local/plot_preseq'
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
 include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/samtools/index/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/qualimap/bamqc/main'
@@ -228,6 +231,7 @@ workflow ADNAMAP {
                         'id': meta_reads.id + "_" + meta_genome.genome_name,
                         'genome_name': meta_genome.genome_name,
                         'taxid': meta_genome.taxid,
+                        'ploidy':meta_genome.ploidy,
                         'sample_name': meta_reads.id,
                         'single_end': params.save_merged ? true : meta_reads.single_end
                     ],
@@ -249,12 +253,45 @@ workflow ADNAMAP {
     )
     ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
 
-    ALIGN_BOWTIE2.out.bam.join(
-        ALIGN_BOWTIE2.out.bai
-    ).map {
-        meta, bam, bai -> [['id':meta.sample_name], bam] // meta.id, bam
-    }.groupTuple()
-    .set { bams_synced }
+    if (params.estimate_complexity && (! params.deduplicate || params.dedup_tool == 'samtools')) {
+
+        ch_preseq_table = Channel.empty()
+
+        if (params.preseq_mode == 'lc_extrap') {
+            PRESEQ_LCEXTRAP(
+                ALIGN_BOWTIE2.out.bam
+            )
+
+            ch_preseq_table = ch_preseq_table.mix(PRESEQ_LCEXTRAP.out.lc_extrap)
+
+        } else if (params.preseq_mode == 'c_curve') {
+            PRESEQ_CCURVE(
+                ALIGN_BOWTIE2.out.bam
+            )
+
+            ch_preseq_table = ch_preseq_table.mix(PRESEQ_CCURVE.out.c_curve)
+        }
+
+        PLOT_PRESEQ(ch_preseq_table)
+
+    }
+
+    if ( params.deduplicate && params.dedup_tool == 'samtools'){
+        SAMTOOLS_REMOVE_DUP (
+            ALIGN_BOWTIE2.out.bam.join(
+                ALIGN_BOWTIE2.out.bai
+            )
+        )
+
+        bams_synced = SAMTOOLS_REMOVE_DUP.out.bam.map {
+            meta, bam -> [['id':meta.sample_name], bam] // meta.id, bam
+        }.groupTuple()
+
+    } else {
+        bams_synced = ALIGN_BOWTIE2.out.bam.map {
+            meta, bam -> [['id':meta.sample_name], bam] // meta.id, bam
+        }.groupTuple()
+    }
 
     MERGE_SORT_INDEX_SAMTOOLS (
         bams_synced
@@ -318,6 +355,8 @@ workflow ADNAMAP {
     }.set {
         synced_ch
     }
+
+    synced_ch.dump(tag: 'synced_ch', pretty: true)
 
 
     DAMAGEPROFILER (

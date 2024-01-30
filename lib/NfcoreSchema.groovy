@@ -117,7 +117,7 @@ class NfcoreSchema {
 
         for (specifiedParam in params.keySet()) {
             // nextflow params
-            if (nf_params.contains(specifiedParam)) {
+            if (nf_params.toString().contains(specifiedParam)) {
                 log.error "ERROR: You used a core Nextflow option with two hyphens: '--${specifiedParam}'. Please resubmit with '-${specifiedParam}'"
                 has_error = true
             }
@@ -125,11 +125,11 @@ class NfcoreSchema {
             def params_ignore = params.schema_ignore_params.split(',') + 'schema_ignore_params'
             def expectedParamsLowerCase = expectedParams.collect{ it.replace("-", "").toLowerCase() }
             def specifiedParamLowerCase = specifiedParam.replace("-", "").toLowerCase()
-            def isCamelCaseBug = (specifiedParam.contains("-") && !expectedParams.contains(specifiedParam) && expectedParamsLowerCase.contains(specifiedParamLowerCase))
-            if (!expectedParams.contains(specifiedParam) && !params_ignore.contains(specifiedParam) && !isCamelCaseBug) {
+            def isCamelCaseBug = (specifiedParam.toString().contains("-") && !expectedParams.toString().contains(specifiedParam) && expectedParamsLowerCase.toString().contains(specifiedParamLowerCase))
+            if (!expectedParams.toString().contains(specifiedParam) && !params_ignore.toString().contains(specifiedParam) && !isCamelCaseBug) {
                 // Temporarily remove camelCase/camel-case params #1035
                 def unexpectedParamsLowerCase = unexpectedParams.collect{ it.replace("-", "").toLowerCase()}
-                if (!unexpectedParamsLowerCase.contains(specifiedParamLowerCase)){
+                if (!unexpectedParamsLowerCase.toString().contains(specifiedParamLowerCase)){
                     unexpectedParams.push(specifiedParam)
                 }
             }
@@ -275,14 +275,14 @@ class NfcoreSchema {
                     def param_type   = group_params.get(param).type
                     if (schema_value != null) {
                         if (param_type == 'string') {
-                            if (schema_value.contains('$projectDir') || schema_value.contains('${projectDir}')) {
+                            if (schema_value.toString().contains('$projectDir') || schema_value.toString().contains('${projectDir}')) {
                                 def sub_string = schema_value.replace('\$projectDir', '')
                                 sub_string     = sub_string.replace('\${projectDir}', '')
-                                if (params_value.contains(sub_string)) {
+                                if (params_value.toString().contains(sub_string)) {
                                     schema_value = params_value
                                 }
                             }
-                            if (schema_value.contains('$params.outdir') || schema_value.contains('${params.outdir}')) {
+                            if (schema_value.toString().contains('$params.outdir') || schema_value.toString().contains('${params.outdir}')) {
                                 def sub_string = schema_value.replace('\$params.outdir', '')
                                 sub_string     = sub_string.replace('\${params.outdir}', '')
                                 if ("${params.outdir}${sub_string}" == params_value) {
@@ -386,10 +386,10 @@ class NfcoreSchema {
     private static JSONObject removeIgnoredParams(raw_schema, params) {
         // Remove anything that's in params.schema_ignore_params
         params.schema_ignore_params.split(',').each{ ignore_param ->
-            if(raw_schema.keySet().contains('definitions')){
+            if(raw_schema.keySet().toString().contains('definitions')){
                 raw_schema.definitions.each { definition ->
                     for (key in definition.keySet()){
-                        if (definition[key].get("properties").keySet().contains(ignore_param)){
+                        if (definition[key].get("properties").keySet().toString().contains(ignore_param)){
                             // Remove the param to ignore
                             definition[key].get("properties").remove(ignore_param)
                             // If the param was required, change this
@@ -401,10 +401,10 @@ class NfcoreSchema {
                     }
                 }
             }
-            if(raw_schema.keySet().contains('properties') && raw_schema.get('properties').keySet().contains(ignore_param)) {
+            if(raw_schema.keySet().toString().contains('properties') && raw_schema.get('properties').keySet().toString().contains(ignore_param)) {
                 raw_schema.get("properties").remove(ignore_param)
             }
-            if(raw_schema.keySet().contains('required') && raw_schema.required.contains(ignore_param)) {
+            if(raw_schema.keySet().toString().contains('required') && raw_schema.required.toString().contains(ignore_param)) {
                 def cleaned_required = removeElement(raw_schema.required, ignore_param)
                 raw_schema.put("required", cleaned_required)
             }

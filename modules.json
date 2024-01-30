@@ -75,6 +75,11 @@
                         "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
                         "installed_by": ["modules"]
                     },
+                    "preseq/ccurve": {
+                        "branch": "master",
+                        "git_sha": "575e1bc54b083fb15e7dd8b5fcc40bea60e8ce83",
+                        "installed_by": ["modules"]
+                    },
                     "preseq/lcextrap": {
                         "branch": "master",
                         "git_sha": "9a88058962c0ee1715f2ad0e017c37e0cd75e532",
@@ -88,6 +93,11 @@
                     "samtools/faidx": {
                         "branch": "master",
                         "git_sha": "3eb99152cedbb7280258858e5df08478a4670696",
+                        "installed_by": ["modules"]
+                    },
+                    "samtools/fixmate": {
+                        "branch": "master",
+                        "git_sha": "a64788f5ad388f1d2ac5bd5f1f3f8fc81476148c",
                         "installed_by": ["modules"]
                     },
                     "samtools/flagstat": {

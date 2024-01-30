@@ -41,6 +41,10 @@ jobs:
         with:
           version: "${{ matrix.NXF_VER }}"
 
-      - name: Run pipeline with test data
+      - name: Run pipeline with default test profile
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir ./results
+
+      - name: Run pipeline with sam2lca_build test profile
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_sam2lca_build,docker --outdir ./results

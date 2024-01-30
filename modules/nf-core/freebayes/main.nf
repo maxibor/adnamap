@@ -20,12 +20,14 @@ process FREEBAYES {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def ploidy = task.ext.ploidy ? "-p ${task.ext.ploidy}" : ''
 
     if (task.cpus > 1) {
         """
         freebayes-parallel \\
             <(fasta_generate_regions.py $fai 10000) $task.cpus \\
             -f $fasta \\
+            $ploidy \\
             $args \\
             $bam > ${prefix}.vcf
 

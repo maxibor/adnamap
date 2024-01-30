@@ -26,7 +26,8 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-                    "fa_icon": "fas fa-folder-open"
+                    "fa_icon": "fas fa-folder-open",
+                    "default": "results"
                 },
                 "email": {
                     "type": "string",
@@ -68,7 +69,7 @@
             "properties": {
                 "save_merged": {
                     "type": "string",
-                    "default": "true",
+                    "default": true,
                     "description": "Merge forward and reverse file if they overlap for PE data"
                 },
                 "save_trimmed_fail": {
@@ -77,13 +78,27 @@
                 },
                 "deduplicate": {
                     "type": "string",
-                    "default": "true",
+                    "default": true,
                     "description": "Perform deduplication with fastp (or samtools markdup if complexity estimation is enabled)"
                 },
-                "estimate_complexity":{
+                "dedup_tool": {
+                    "type": "string",
+                    "description": "Deduplication tool",
+                    "enum": ["fastp", "samtools"],
+                    "default": "fastp",
+                    "help_text": "fastp or samtools markdup"
+                },
+                "estimate_complexity": {
                     "type": "boolean",
-                    "default": "false",
-                    "description": "Estimate complexity of library using Preseq"
+                    "description": "Estimate complexity of library using Preseq",
+                    "help_text": "Only when dedup tool in samtools markdup"
+                },
+                "preseq_mode": {
+                    "type": "string",
+                    "default": "c_curve",
+                    "description": "Preseq running mode",
+                    "help_text": "Use c_curve for running on very shallowly sequenced data.\nUse lc_extra to get an extrapolation of the coverage with more sequencing. Requires more mapped reads",
+                    "enum": ["c_curve", "lc_extrap"]
                 },
                 "damageprofiler_length": {
                     "type": "integer",
@@ -107,7 +122,6 @@
             "properties": {
                 "sam2lca_db": {
                     "type": "string",
-                    "default": "/Users/maxime/.sam2lca",
                     "description": "Path to sam2lca database directory",
                     "format": "directory-path"
                 },
@@ -164,11 +178,6 @@
                     "type": "boolean",
                     "description": "Skip variant calling"
                 },
-                "freebayes_ploidy": {
-                    "type": "integer",
-                    "default": 1,
-                    "description": "Ploidy of the reference organism"
-                },
                 "freebayes_min_basequality": {
                     "type": "integer",
                     "default": 20,
@@ -196,7 +205,7 @@
                 },
                 "freebayes_report_all_sites": {
                     "type": "string",
-                    "default": "true"
+                    "default": true
                 },
                 "bcftools_view_high_variant_quality": {
                     "type": "integer",
@@ -357,7 +366,7 @@
                 "tracedir": {
                     "type": "string",
                     "description": "Directory to keep pipeline Nextflow logs and reports.",
-                    "default": "${params.outdir}/pipeline_info",
+                    "default": "results/pipeline_info",
                     "fa_icon": "fas fa-cogs",
                     "hidden": true
                 },
@@ -409,5 +418,11 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "schema_ignore_params": {
+            "type": "string",
+            "default": "genomes"
+        }
+    }
 }

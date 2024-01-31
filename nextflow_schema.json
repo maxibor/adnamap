@@ -53,7 +53,7 @@
                     "type": "string",
                     "format": "file-path",
                     "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
+                    "pattern": "^\\S+\\.csv$",
                     "description": "Path to genome csv sheet",
                     "help_text": "A genome sample sheet example can be found in test/data/genomes.csv",
                     "fa_icon": "far fa-file-code"
@@ -77,7 +77,7 @@
                     "description": "Also include failed trimmed reads in output"
                 },
                 "deduplicate": {
-                    "type": "string",
+                    "type": "boolean",
                     "default": true,
                     "description": "Perform deduplication with fastp (or samtools markdup if complexity estimation is enabled)"
                 },

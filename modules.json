@@ -47,7 +47,7 @@
                     },
                     "damageprofiler": {
                         "branch": "master",
-                        "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
                         "installed_by": ["modules"]
                     },
                     "fastp": {
@@ -68,6 +68,11 @@
                     "gunzip": {
                         "branch": "master",
                         "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
+                        "installed_by": ["modules"]
+                    },
+                    "mapdamage2": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
                         "installed_by": ["modules"]
                     },
                     "multiqc": {

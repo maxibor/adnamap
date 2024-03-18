@@ -77,6 +77,7 @@ include { PLOT_PRESEQ                                      } from '../modules/lo
 include { SAM2LCA                                          } from '../modules/local/sam2lca/main'
 include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf-core/samtools/index/main'
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/qualimap/bamqc/main'
+include { MAPDAMAGE2                                       } from '../modules/nf-core/mapdamage2/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/damageprofiler/main'
 include { MULTIQC                                          } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/custom/dumpsoftwareversions/main'
@@ -364,12 +365,30 @@ workflow ADNAMAP {
 
     synced_ch.dump(tag: 'synced_ch', pretty: true)
 
+    if (params.damage_tool == 'mapdamage2') {
+        MAPDAMAGE2 (
+            synced_ch.map {
+                meta, bam, bai, fasta, fai -> [meta, bam, fasta]
+            }
+        )
+        ch_versions = ch_versions.mix(MAPDAMAGE2.out.versions.first())
 
-    DAMAGEPROFILER (
-        synced_ch
-    )
+        synced_ch = synced_ch.join(
+            MAPDAMAGE2.out.rescaled
+        ).map {
+            meta, bam, bai, fasta, fai, rescaled_bam -> [meta, rescaled_bam, bai, fasta, fai]
+        }
 
-    ch_versions = ch_versions.mix(DAMAGEPROFILER.out.versions.first())
+    } else {
+        DAMAGEPROFILER (
+            synced_ch.map {
+                meta, bam, bai, fasta, fai -> [meta, bam, fasta, fai]
+            },
+            []
+        )
+
+        ch_versions = ch_versions.mix(DAMAGEPROFILER.out.versions.first())
+    }
 
     QUALIMAP_BAMQC (
         synced_ch
@@ -411,7 +430,6 @@ workflow ADNAMAP {
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ALIGN_BOWTIE2.out.log_out.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(DAMAGEPROFILER.out.results.collect{it[1]}.ifEmpty([]))
     if ( ! params.skip_variant_calling) {
         ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]}.ifEmpty([]))
     }

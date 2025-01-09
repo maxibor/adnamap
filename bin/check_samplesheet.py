@@ -33,6 +33,7 @@ class RowChecker:
     def __init__(
         self,
         sample_col="sample",
+        library_col="library",
         first_col="fastq_1",
         second_col="fastq_2",
         single_col="single_end",
@@ -55,6 +56,7 @@ class RowChecker:
         """
         super().__init__(**kwargs)
         self._sample_col = sample_col
+        self._library_col = library_col
         self._first_col = first_col
         self._second_col = second_col
         self._single_col = single_col
@@ -119,14 +121,14 @@ class RowChecker:
 
         """
         assert len(self._seen) == len(self.modified), "The pair of sample name and FASTQ must be unique."
-        if len({pair[0] for pair in self._seen}) < len(self._seen):
-            counts = Counter(pair[0] for pair in self._seen)
-            seen = Counter()
-            for row in self.modified:
-                sample = row[self._sample_col]
-                seen[sample] += 1
-                if counts[sample] > 1:
-                    row[self._sample_col] = f"{sample}_T{seen[sample]}"
+        # if len({pair[0] for pair in self._seen}) < len(self._seen):
+        #     counts = Counter(pair[0] for pair in self._seen)
+        #     seen = Counter()
+        #     for row in self.modified:
+        #         sample = row[self._sample_col]
+        #         seen[sample] += 1
+        #         if counts[sample] > 1:
+        #             row[self._sample_col] = f"{sample}_T{seen[sample]}"
 
 
 def read_head(handle, num_lines=10):
@@ -181,19 +183,19 @@ def check_samplesheet(file_in, file_out):
         This function checks that the samplesheet follows the following structure,
         see also the `viral recon samplesheet`_::
 
-            sample,fastq_1,fastq_2
-            SAMPLE_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz
-            SAMPLE_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz
-            SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,
+            sample,library,fastq_1,fastq_2
+            SAMPLE_PE,SAMPLE_A_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz
+            SAMPLE_PE,SAMPLE_B_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz
+            SAMPLE_SE,SAMPLE_A_SE,SAMPLE_SE_RUN1_1.fastq.gz,
 
     .. _viral recon samplesheet:
         https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
 
     """
-    required_columns = {"sample", "fastq_1", "fastq_2"}
+    required_columns = {"sample", "library", "fastq_1", "fastq_2"}
     # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
     with file_in.open(newline="") as in_handle:
-        reader = csv.DictReader(in_handle, dialect=sniff_format(in_handle))
+        reader = csv.DictReader(in_handle)
         # Validate the existence of the expected header columns.
         if not required_columns.issubset(reader.fieldnames):
             logger.critical(f"The sample sheet **must** contain the column headers: {', '.join(required_columns)}.")

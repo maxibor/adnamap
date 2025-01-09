@@ -35,7 +35,9 @@ workflow SAMTOOLS_REMOVE_DUP {
 
         SAMTOOLS_VIEW(
             SAMTOOLS_MARKDUP.out.bam.join (
-                SAMTOOLS_INDEX.out.bai
+                SAMTOOLS_INDEX.out.bai.mix(
+                    SAMTOOLS_INDEX.out.csi
+                )
             ),
             [[],[]],
             []

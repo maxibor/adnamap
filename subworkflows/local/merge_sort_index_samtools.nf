@@ -19,5 +19,6 @@ workflow MERGE_SORT_INDEX_SAMTOOLS {
     emit:
     bam = SAMTOOLS_SORT.out.bam
     bai = SAMTOOLS_INDEX.out.bai
+    csi = SAMTOOLS_INDEX.out.csi
     versions = ch_versions
 }

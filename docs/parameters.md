@@ -36,7 +36,6 @@ Option specific to this pipeline
 | `estimate_complexity` | Estimate complexity of library using Preseq <details><summary>Help</summary><small>Only when dedup tool in samtools markdup<
 | `preseq_mode` | Preseq running mode <details><summary>Help</summary><small>Use c_curve for running on very shallowly sequenced data.<br>Use lc_extra
 | `damageprofiler_length` | Window length for DamageProfiler <details><summary>Help</summary><small>Number of bases which are considered for frequency
-| `damageprofiler_threshold` | DamageProfiler threshold <details><summary>Help</summary><small>Number of bases which are considered for plotting nucle
                                                                                                                                                       
 ## sam2lca options                                                                                                                                    
                                                                                                                                                       

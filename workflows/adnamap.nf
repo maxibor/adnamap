@@ -23,16 +23,6 @@ if (params.genomes) { ch_genomes = Channel.fromPath(params.genomes) } else { exi
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CREATE GENOMES CHANNEL
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-ch_genomes
-    .splitCsv(header:true, sep:',')
-    .map { row -> [ ["genome_name": row.genome_name, "taxid": row.taxid, "ploidy": row.ploidy], file(row.genome_path), file(row.genome_index, type: 'dir') ] }
-    .set { genomes }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -49,13 +39,15 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK               } from '../subworkflows/local/input_check'
-include { ALIGN_BOWTIE2             } from '../subworkflows/nf-core/align_bowtie2/main'
-include { MERGE_SORT_INDEX_SAMTOOLS } from '../subworkflows/local/merge_sort_index_samtools'
-include { VARIANT_CALLING           } from '../subworkflows/local/variant_calling'
-include { BAM_SORT_SAMTOOLS         } from '../subworkflows/nf-core/bam_sort_samtools/main'
-include { SAM2LCA_DB                } from '../subworkflows/local/sam2lca_db'
-include { SAMTOOLS_REMOVE_DUP       } from '../subworkflows/local/samtools_remove_dup'
+include { INPUT_CHECK                                    } from '../subworkflows/local/input_check'
+include { GENOME_CHECK                                   } from '../subworkflows/local/genome_check'
+include { ALIGN_BOWTIE2                                  } from '../subworkflows/nf-core/align_bowtie2/main'
+include { MERGE_SORT_INDEX_SAMTOOLS as MERGE_BAM_LIBS ; 
+          MERGE_SORT_INDEX_SAMTOOLS as MERGE_BAM_SAMPLES } from '../subworkflows/local/merge_sort_index_samtools'
+include { VARIANT_CALLING                                } from '../subworkflows/local/variant_calling'
+include { BAM_SORT_SAMTOOLS                              } from '../subworkflows/nf-core/bam_sort_samtools/main'
+include { SAM2LCA_DB                                     } from '../subworkflows/local/sam2lca_db'
+include { SAMTOOLS_REMOVE_DUP                            } from '../subworkflows/local/samtools_remove_dup'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -68,9 +60,7 @@ include { SAMTOOLS_REMOVE_DUP       } from '../subworkflows/local/samtools_remov
 include { SAMTOOLS_FAIDX                                   } from '../modules/nf-core/samtools/faidx/main'
 include { FASTQC as FASTQC_BEFORE ; FASTQC as FASTQC_AFTER } from '../modules/nf-core/fastqc/main'
 include { FASTP                                            } from '../modules/nf-core/fastp/main'
-include { GUNZIP as GUNZIP4IDX ; GUNZIP as GUNZIP4GENOME   } from '../modules/nf-core/gunzip/main'
-include { UNTAR                                            } from '../modules/nf-core/untar/main'
-include { BOWTIE2_BUILD                                    } from '../modules/nf-core/bowtie2/build/main'
+include { CAT_FASTQ                                        } from '../modules/nf-core/cat/fastq/main'
 include { PRESEQ_LCEXTRAP                                  } from '../modules/nf-core/preseq/lcextrap/main'
 include { PRESEQ_CCURVE                                    } from '../modules/nf-core/preseq/ccurve/main'
 include { PLOT_PRESEQ                                      } from '../modules/local/plot_preseq'
@@ -126,76 +116,63 @@ workflow ADNAMAP {
         FASTP.out.reads_merged.mix(FASTP.out.reads)
     )
 
+    /* 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RUN/LIBRARY MERGING
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    */
+    if (params.save_merged && params.include_unmerged) {
+        reads_merge_input_ch = FASTP.out.reads_merged.map {
+            meta, reads ->
+            def new_meta = meta.clone()
+            new_meta['single_end'] = true
+            [new_meta, reads]
+        }.mix(FASTP.out.reads)
+
+    } else if (params.save_merged) {
+        reads_merge_input_ch = FASTP.out.reads_merged.map {
+            meta, reads ->
+            def new_meta = meta.clone()
+            new_meta['single_end'] = true
+            [new_meta, reads]
+        }
+    } else {
+        reads_merge_input_ch = FASTP.out.reads
+    }
+
+    CAT_FASTQ (
+        reads_merge_input_ch
+        .map {
+            meta , reads -> 
+            ext = meta.single_end ? "_SE" : "_PE"
+            [   
+                [
+                    'id': meta.id + ext,
+                    'sample': meta.sample,
+                    'single_end': meta.single_end
+                ],
+                reads
+            ]
+        }
+        .groupTuple()
+        .map {
+            meta, reads -> [meta, reads.flatten()]
+        }.dump(tag: "BAMS TO MERGE PER LIBRARY", pretty: true)    
+    )
+
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    FASTA pre-processing
+    GENOME PRE-PROCESSING
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     */
 
-    genomes
-        .branch {
-            decompressed: it[1].toString().tokenize(".")[-1] != 'gz' && it[2].isEmpty()
-            compressed: it[1].toString().tokenize(".")[-1] == 'gz' && it[2].isEmpty()
-            has_index_decompressed: ! it[2].isEmpty() && it[2].toString().tokenize(".")[-1] != 'gz'
-            has_index_compressed: ! it[2].isEmpty() && it[2].toString().tokenize(".")[-1] == 'gz'
-        }
-        .set { genomes_idx_fork }
-
-    genomes
-        .branch {
-            decompressed: it[1].toString().tokenize(".")[-1] != 'gz' && ! it[2].isEmpty()
-            compressed: it[1].toString().tokenize(".")[-1] == 'gz' && ! it[2].isEmpty()
-        }
-        .set { genomes_fasta_fork }
-
-    GUNZIP4IDX (
-        genomes_idx_fork.compressed
-        .map {
-            genome_meta, fasta, index -> [genome_meta, fasta]
-        }
+    GENOME_CHECK (
+        ch_genomes
     )
 
-    UNTAR(
-        genomes_idx_fork.has_index_compressed.map {
-            meta, genome_fasta, genome_index ->
-            [meta, genome_index]
-        }
-    )
-
-    GUNZIP4IDX.out.gunzip
-        .mix(genomes_idx_fork.decompressed)
-        .set { genomes_pre_processed }
-
-    BOWTIE2_BUILD (
-        genomes_pre_processed
-    )
-
-    ch_indices = BOWTIE2_BUILD.out.index.mix(
-            genomes_idx_fork.has_index_decompressed
-            .map {
-                meta_genome, genome_fasta, genome_index ->
-                [meta_genome, genome_index]
-            }
-        ).mix (
-                UNTAR.out.untar
-        )
-
-    GUNZIP4GENOME (
-        genomes_fasta_fork.compressed
-        .map {
-            genome_meta, fasta, index -> [genome_meta, fasta]
-        }
-    )
-
-    GUNZIP4GENOME.out.gunzip.mix (
-        genomes_fasta_fork.decompressed.map {
-            genome_meta, fasta, index -> [genome_meta, fasta]
-        }
-    ).mix (
-        genomes_pre_processed
-    ) .set { ch_genomes }
-
+    ch_genomes = GENOME_CHECK.out.genomes_pre_processed
+    ch_indices = GENOME_CHECK.out.ch_indices
 
     SAMTOOLS_FAIDX (
         ch_genomes
@@ -229,7 +206,7 @@ workflow ADNAMAP {
     */
 
 
-    FASTP.out.reads_merged.mix(FASTP.out.reads) // meta_reads, merged_reads
+    CAT_FASTQ.out.reads // meta_reads, merged_reads
         .combine(ch_indices) // meta_genome, genome_index
         .map {
             meta_reads, reads, meta_genome, genome_index ->
@@ -239,8 +216,8 @@ workflow ADNAMAP {
                         'genome_name': meta_genome.genome_name,
                         'taxid': meta_genome.taxid,
                         'ploidy':meta_genome.ploidy,
-                        'sample_name': meta_reads.id,
-                        'single_end': params.save_merged ? true : meta_reads.single_end
+                        'sample_name': meta_reads.sample,
+                        'single_end': meta_reads.single_end
                     ],
                     reads,
                     genome_index
@@ -248,6 +225,7 @@ workflow ADNAMAP {
                 // [meta_reads + meta_genome , reads, genome_index]
         }
         .set { ch_reads_genomes }
+        ch_reads_genomes.dump(tag: "CH READS GENOMES", pretty: true)
 
     /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,7 +236,22 @@ workflow ADNAMAP {
     ALIGN_BOWTIE2 (
         ch_reads_genomes
     )
+
     ch_versions = ch_versions.mix(ALIGN_BOWTIE2.out.versions.first())
+
+    MERGE_BAM_LIBS (
+        ALIGN_BOWTIE2.out.bam.map {
+            meta, bam ->
+            [ meta.findAll { it.key != 'single_end' }, bam]
+        }.map {
+            meta, bam ->
+            new_meta = meta.clone()
+            new_meta.id = meta.sample_name + "_" + meta.genome_name
+            [new_meta, bam]
+        }
+        .groupTuple()
+        .dump(tag: "BAMS TO MERGE PER SAMPLE", pretty: true)
+    )
 
     if (params.estimate_complexity && (! params.deduplicate || params.dedup_tool == 'samtools')) {
 
@@ -266,14 +259,14 @@ workflow ADNAMAP {
 
         if (params.preseq_mode == 'lc_extrap') {
             PRESEQ_LCEXTRAP(
-                ALIGN_BOWTIE2.out.bam
+                MERGE_BAM_LIBS.out.bam
             )
 
             ch_preseq_table = ch_preseq_table.mix(PRESEQ_LCEXTRAP.out.lc_extrap)
 
         } else if (params.preseq_mode == 'c_curve') {
             PRESEQ_CCURVE(
-                ALIGN_BOWTIE2.out.bam
+                MERGE_BAM_LIBS.out.bam
             )
 
             ch_preseq_table = ch_preseq_table.mix(PRESEQ_CCURVE.out.c_curve)
@@ -285,8 +278,8 @@ workflow ADNAMAP {
 
     if ( params.deduplicate && params.dedup_tool == 'samtools'){
         SAMTOOLS_REMOVE_DUP (
-            ALIGN_BOWTIE2.out.bam.join(
-                ALIGN_BOWTIE2.out.bai
+            MERGE_BAM_LIBS.out.bam.join(
+                MERGE_BAM_LIBS.out.bai.mix(MERGE_BAM_LIBS.out.csi)
             )
         )
 
@@ -295,18 +288,18 @@ workflow ADNAMAP {
         }.groupTuple()
 
     } else {
-        bams_synced = ALIGN_BOWTIE2.out.bam.map {
+        bams_synced = MERGE_BAM_LIBS.out.bam.map {
             meta, bam -> [['id':meta.sample_name], bam] // meta.id, bam
         }.groupTuple()
     }
 
-    MERGE_SORT_INDEX_SAMTOOLS (
+    MERGE_BAM_SAMPLES (
         bams_synced
     )
 
     SAM2LCA (
-        MERGE_SORT_INDEX_SAMTOOLS.out.bam.join(
-            MERGE_SORT_INDEX_SAMTOOLS.out.bai
+        MERGE_BAM_SAMPLES.out.bam.join(
+            MERGE_BAM_SAMPLES.out.bai.mix(MERGE_BAM_SAMPLES.out.csi)
         ),
         sam2lca_db.first()
     )
@@ -317,7 +310,8 @@ workflow ADNAMAP {
                 meta, csv ->
                 [ csv ]
             }
-            .collect(),
+            .collect()
+            .dump (tag: "SAM2LCA CSV", pretty: true),
         params.sam2lca_split_rank
     )
 
@@ -330,40 +324,49 @@ workflow ADNAMAP {
                 new_meta['taxid'] = bam.baseName.toString().split("_taxid_")[-1].tokenize(".")[0]
             [new_meta['id'], new_meta['taxid'] , bam]
     }
+    .dump(tag: "SAM2LCA OUT BAM", pretty: true)
     .join(
         ch_reads_genomes.map {
-            meta, reads, genome_index -> [meta.sample_name, meta.taxid, meta]
+            meta, reads, genome_index -> 
+            [meta.sample_name, meta.taxid, meta]
         }, by: [0, 1]
-    ).map {
-        sample_name, taxid, bam, meta -> [meta, bam]
+    )
+    .dump(tag: "SAM2LCA OUT BAM JOIN", pretty: true)
+    .map {
+        sample_name, taxid, bam, meta -> 
+        def new_meta = meta.clone()
+        new_meta.id = meta.sample_name + "_" + meta.genome_name
+        [ new_meta.findAll { it.key != 'single_end' }, bam]
     }
     .set{ bam_split_by_ref} // meta, bam
+
+    bam_split_by_ref.dump(tag: "BAM SPLIT BY REF", pretty: true)
 
     BAM_SORT_SAMTOOLS {
         bam_split_by_ref
     }
 
     BAM_SORT_SAMTOOLS.out.bam.join(
-        BAM_SORT_SAMTOOLS.out.bai
+        BAM_SORT_SAMTOOLS.out.bai.mix(BAM_SORT_SAMTOOLS.out.csi)
     ).map {
-        meta, bam, bai -> [meta.taxid, meta, bam, bai] // taxid, meta, bam, bai
+        meta, bam, bai -> [meta.taxid, meta, bam, bai] // taxid, meta, bam, bai/csi
     }.combine(
         ch_genomes
             .map{
                 meta, fasta -> [meta.taxid, fasta]//taxid, fasta
             }
-    , by: 0).combine(                      // taxid, meta, bam, bai, fasta
+    , by: 0).combine(                      // taxid, meta, bam, bai/csi, fasta
         SAMTOOLS_FAIDX.out.fai
             .map{
                 meta, fai -> [meta.taxid, fai] // taxid, fai
             }
-    , by: 0).map{ //taxid, meta, bam, bai, fasta, fai
-        taxid, meta, bam, bai, fasta, fai -> [meta, bam, bai, fasta, fai] // meta, bam, bai, fasta, fai
+    , by: 0).map{ //taxid, meta, bam, bai/csi, fasta, fai
+        taxid, meta, bam, bai, fasta, fai -> [meta, bam, bai, fasta, fai] // meta, bam, bai/csi, fasta, fai
     }.set {
         synced_ch
     }
 
-    synced_ch.dump(tag: 'synced_ch', pretty: true)
+    synced_ch.dump(tag: "SYNCED CH", pretty: true)
 
     if (params.damage_tool == 'mapdamage2') {
         MAPDAMAGE2 (

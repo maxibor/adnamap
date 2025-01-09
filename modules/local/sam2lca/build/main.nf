@@ -32,5 +32,22 @@ process SAM2LCA_BUILD {
         --taxo_merged $taxo_merged \\
         -a adnamap \\
         --acc2tax_json adnamap.sam2lca.json
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        sam2lca: \$(echo \$(sam2lca --version 2>&1) | sed 's/^sam2lca, version //' ))
+    END_VERSIONS
+    """
+
+    stub:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    mkdir -p sam2lca_db
+    touch sam2lca_db/test.pkl
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        sam2lca: \$(echo \$(sam2lca --version 2>&1) | sed 's/^sam2lca, version //' ))
+    END_VERSIONS
     """
 }

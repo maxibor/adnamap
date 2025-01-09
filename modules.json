@@ -40,6 +40,16 @@
                         "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d",
                         "installed_by": ["modules"]
                     },
+                    "cat/cat": {
+                        "branch": "master",
+                        "git_sha": "9437e6053dccf4aafa022bfd6e7e9de67e625af8",
+                        "installed_by": ["modules"]
+                    },
+                    "cat/fastq": {
+                        "branch": "master",
+                        "git_sha": "0997b47c93c06b49aa7b3fefda87e728312cf2ca",
+                        "installed_by": ["modules"]
+                    },
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
                         "git_sha": "82501fe6d0d12614db67751d30af98d16e63dc59",

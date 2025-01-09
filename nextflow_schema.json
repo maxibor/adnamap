@@ -68,7 +68,7 @@
             "default": "",
             "properties": {
                 "save_merged": {
-                    "type": "string",
+                    "type": "boolean",
                     "default": true,
                     "description": "Merge forward and reverse file if they overlap for PE data"
                 },
@@ -100,17 +100,18 @@
                     "help_text": "Use c_curve for running on very shallowly sequenced data.\nUse lc_extra to get an extrapolation of the coverage with more sequencing. Requires more mapped reads",
                     "enum": ["c_curve", "lc_extrap"]
                 },
-                "damageprofiler_length": {
-                    "type": "integer",
-                    "default": 100,
-                    "description": "Window length for DamageProfiler",
-                    "help_text": "Number of bases which are considered for frequency computations"
+                "damage_tool": {
+                    "type": "string",
+                    "default": "damageprofiler",
+                    "description": "Tool for ancient DNA damage estiamation",
+                    "help_text": "Tool for ancient DNA damage estiamation",
+                    "enum": ["damageprofiler","mapdamage2"]
                 },
-                "damageprofiler_threshold": {
+                "damage_bases": {
                     "type": "integer",
-                    "default": 15,
-                    "description": "DamageProfiler threshold",
-                    "help_text": "Number of bases which are considered for plotting nucleotide misincorporations"
+                    "default": 20,
+                    "description": "Window length for DamageProfiler/MapDamage",
+                    "help_text": "Number of bases which are considered for damage profile frequency computations"
                 }
             }
         },
@@ -204,7 +205,7 @@
                     "description": "Subsample higher coverage to limit"
                 },
                 "freebayes_report_all_sites": {
-                    "type": "string",
+                    "type": "boolean",
                     "default": true
                 },
                 "bcftools_view_high_variant_quality": {
@@ -301,7 +302,7 @@
                     "description": "Maximum amount of time that can be requested for any single job.",
                     "default": "240.h",
                     "fa_icon": "far fa-clock",
-                    "pattern": "^(\\d+\\.?\\s*(s|m|h|day)\\s*)+$",
+                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
                     "hidden": true,
                     "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
                 }

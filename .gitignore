@@ -7,3 +7,4 @@ testing*
 *.pyc
 LOG*
 *.log
+tower.config

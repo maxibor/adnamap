@@ -24,7 +24,8 @@ workflow INPUT_CHECK {
 def create_fastq_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
-    meta.id         = row.sample
+    meta.id        = row.library
+    meta.sample    = row.sample
     meta.single_end = row.fastq_2.isEmpty() ? true : false
 
     // add path(s) of the fastq file(s) to the meta map

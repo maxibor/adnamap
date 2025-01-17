@@ -12,14 +12,10 @@ process PLOT_PRESEQ {
     output:
     path '*.png'       , emit: png
 
-    when:
-    task.ext.when == null || task.ext.when
-
     script:
     def args = task.ext.args ?: ""
     def args2 = task.ext.args2 ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    script: // This script is bundled with the pipeline, in nf-core/adnamap/bin/
     """
     plot_preseq.py \\
         $args \\

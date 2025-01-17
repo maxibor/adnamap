@@ -81,12 +81,15 @@ flowchart TD
       merged_BAM --sam2lca--> rank_BAM["taxon rank specific BAM"]
     end
     subgraph alignment_post[Alignment post_processing]
-        qualimap[Alignment stats reporting]
+        qualimap[Qualimap: Alignment stats reporting]
         damageprofiler[DamageProfiler: aDNA stats]
+        ngsBriggs[ngsBriggs: Alignment aDNA briggs parameters inference]
         fasta--decompressed-->damageprofiler
         gunzip-->damageprofiler
         rank_BAM--BAM+index-->damageprofiler
         rank_BAM--BAM+index-->qualimap
+        fasta--decompressed-->ngsBriggs
+        rank_BAM-->ngsBriggs
     end
     subgraph variant_calling[Variant calling]
         snpAD["snpAD: ancient DNA damage aware genotyper"]

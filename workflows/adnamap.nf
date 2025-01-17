@@ -42,7 +42,7 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 include { INPUT_CHECK                                    } from '../subworkflows/local/input_check'
 include { GENOME_CHECK                                   } from '../subworkflows/local/genome_check'
 include { ALIGN_BOWTIE2                                  } from '../subworkflows/nf-core/align_bowtie2/main'
-include { MERGE_SORT_INDEX_SAMTOOLS as MERGE_BAM_LIBS ; 
+include { MERGE_SORT_INDEX_SAMTOOLS as MERGE_BAM_LIBS ;
           MERGE_SORT_INDEX_SAMTOOLS as MERGE_BAM_SAMPLES } from '../subworkflows/local/merge_sort_index_samtools'
 include { VARIANT_CALLING                                } from '../subworkflows/local/variant_calling'
 include { BAM_SORT_SAMTOOLS                              } from '../subworkflows/nf-core/bam_sort_samtools/main'
@@ -69,6 +69,7 @@ include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/qualimap/bamqc/main'
 include { MAPDAMAGE2                                       } from '../modules/nf-core/mapdamage2/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/damageprofiler/main'
+include { NGSBRIGGS                                        } from '../modules/local/ngsbriggs'
 include { MULTIQC                                          } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SAM2LCA_MERGE                                    } from '../modules/local/sam2lca_merge'
@@ -116,7 +117,7 @@ workflow ADNAMAP {
         FASTP.out.reads_merged.mix(FASTP.out.reads)
     )
 
-    /* 
+    /*
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN/LIBRARY MERGING
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,9 +144,9 @@ workflow ADNAMAP {
     CAT_FASTQ (
         reads_merge_input_ch
         .map {
-            meta , reads -> 
+            meta , reads ->
             ext = meta.single_end ? "_SE" : "_PE"
-            [   
+            [
                 [
                     'id': meta.id + ext,
                     'sample': meta.sample,
@@ -157,7 +158,7 @@ workflow ADNAMAP {
         .groupTuple()
         .map {
             meta, reads -> [meta, reads.flatten()]
-        }.dump(tag: "BAMS TO MERGE PER LIBRARY", pretty: true)    
+        }.dump(tag: "BAMS TO MERGE PER LIBRARY", pretty: true)
     )
 
 
@@ -327,13 +328,13 @@ workflow ADNAMAP {
     .dump(tag: "SAM2LCA OUT BAM", pretty: true)
     .join(
         ch_reads_genomes.map {
-            meta, reads, genome_index -> 
+            meta, reads, genome_index ->
             [meta.sample_name, meta.taxid, meta]
         }, by: [0, 1]
     )
     .dump(tag: "SAM2LCA OUT BAM JOIN", pretty: true)
     .map {
-        sample_name, taxid, bam, meta -> 
+        sample_name, taxid, bam, meta ->
         def new_meta = meta.clone()
         new_meta.id = meta.sample_name + "_" + meta.genome_name
         [ new_meta.findAll { it.key != 'single_end' }, bam]
@@ -398,6 +399,11 @@ workflow ADNAMAP {
             .map{ meta, bam, bai, fasta, fai  -> [meta, bam] } // meta, bam
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
+
+    NGSBRIGGS (
+        synced_ch
+            .map{ meta, bam, bai, fasta, fai  -> [meta, bam, fasta] } // meta, bam
+    )
 
     if (! params.skip_variant_calling) {
         VARIANT_CALLING (

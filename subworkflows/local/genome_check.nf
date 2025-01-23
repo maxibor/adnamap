@@ -8,7 +8,7 @@ include { BOWTIE2_BUILD } from '../../modules/nf-core/bowtie2/build/main'
 
 workflow GENOME_CHECK {
     take:
-    genome_sheet 
+    genome_sheet
 
     main:
 
@@ -19,7 +19,7 @@ workflow GENOME_CHECK {
 
     genomes
         .branch {
-            decompressed: it[1].getExtension() != 'gz' 
+            decompressed: it[1].getExtension() != 'gz'
             compressed: it[1].getExtension() == 'gz'
         }
         .set { genomes_fasta_fork }
@@ -41,7 +41,7 @@ workflow GENOME_CHECK {
     genomes_pre_processed.join(
         genomes
     ).map {
-        genome_meta, fasta, fasta_raw, index_raw -> [genome_meta, fasta, index_raw] 
+        genome_meta, fasta, fasta_raw, index_raw -> [genome_meta, fasta, index_raw]
     }.branch {
             no_index: ! it[2] // decompressed genome, no idx
             has_index_decompressed: it[2] && it[2].getExtension() != 'gz' // genome with decompressed index
@@ -71,7 +71,7 @@ workflow GENOME_CHECK {
         ).mix (
                 UNTAR.out.untar
         ) // all genomes indices ready
-    
+
 
     emit:
     genomes_pre_processed                                // channel: [ [genome_meta], [ genome_fasta ] ]
@@ -90,11 +90,11 @@ def create_genome_channel(LinkedHashMap row) {
         exit 1, "ERROR: Please check input genome sheet -> Genome path does not exist!\n${row.genome_path}"
     }
     if (row.genome_index != "") {
-       if (file(row.genome_index).exists() and ! file(row.genome_index).isEmpty()) {
+        if (file(row.genome_index).exists() and ! file(row.genome_index).isEmpty()) {
             genome_meta = [ meta, file(row.genome_path), file(row.genome_index) ]
-       } else {
+        } else {
             genome_meta = [ meta, file(row.genome_path), null ]
-       }
+        }
     } else {
         genome_meta = [ meta, file(row.genome_path), null ]
     }

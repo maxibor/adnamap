@@ -48,6 +48,7 @@ include { VARIANT_CALLING                                } from '../subworkflows
 include { BAM_SORT_SAMTOOLS                              } from '../subworkflows/nf-core/bam_sort_samtools/main'
 include { SAM2LCA_DB                                     } from '../subworkflows/local/sam2lca_db'
 include { SAMTOOLS_REMOVE_DUP                            } from '../subworkflows/local/samtools_remove_dup'
+include { DAMAGE_INFERENCE                               } from '../subworkflows/local/damage_inference'
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT NF-CORE MODULES/SUBWORKFLOWS
@@ -69,7 +70,6 @@ include { SAMTOOLS_INDEX as INDEX_PER_GENOME               } from '../modules/nf
 include { QUALIMAP_BAMQC                                   } from '../modules/nf-core/qualimap/bamqc/main'
 include { MAPDAMAGE2                                       } from '../modules/nf-core/mapdamage2/main'
 include { DAMAGEPROFILER                                   } from '../modules/nf-core/damageprofiler/main'
-include { NGSBRIGGS                                        } from '../modules/local/ngsbriggs'
 include { MULTIQC                                          } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                      } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SAM2LCA_MERGE                                    } from '../modules/local/sam2lca_merge'
@@ -369,30 +369,30 @@ workflow ADNAMAP {
 
     synced_ch.dump(tag: "SYNCED CH", pretty: true)
 
-    if (params.damage_tool == 'mapdamage2') {
-        MAPDAMAGE2 (
-            synced_ch.map {
-                meta, bam, bai, fasta, fai -> [meta, bam, fasta]
-            }
-        )
-        ch_versions = ch_versions.mix(MAPDAMAGE2.out.versions.first())
+    // if (params.damage_tool == 'mapdamage2') {
+    //     MAPDAMAGE2 (
+    //         synced_ch.map {
+    //             meta, bam, bai, fasta, fai -> [meta, bam, fasta]
+    //         }
+    //     )
+    //     ch_versions = ch_versions.mix(MAPDAMAGE2.out.versions.first())
 
-        synced_ch = synced_ch.join(
-            MAPDAMAGE2.out.rescaled
-        ).map {
-            meta, bam, bai, fasta, fai, rescaled_bam -> [meta, rescaled_bam, bai, fasta, fai]
-        }
+    //     synced_ch = synced_ch.join(
+    //         MAPDAMAGE2.out.rescaled
+    //     ).map {
+    //         meta, bam, bai, fasta, fai, rescaled_bam -> [meta, rescaled_bam, bai, fasta, fai]
+    //     }
 
-    } else {
-        DAMAGEPROFILER (
-            synced_ch.map {
-                meta, bam, bai, fasta, fai -> [meta, bam, fasta, fai]
-            },
-            []
-        )
+    // } else {
+    //     DAMAGEPROFILER (
+    //         synced_ch.map {
+    //             meta, bam, bai, fasta, fai -> [meta, bam, fasta, fai]
+    //         },
+    //         []
+    //     )
 
-        ch_versions = ch_versions.mix(DAMAGEPROFILER.out.versions.first())
-    }
+    //     ch_versions = ch_versions.mix(DAMAGEPROFILER.out.versions.first())
+    // }
 
     QUALIMAP_BAMQC (
         synced_ch
@@ -400,9 +400,8 @@ workflow ADNAMAP {
     )
     ch_versions = ch_versions.mix(QUALIMAP_BAMQC.out.versions.first())
 
-    NGSBRIGGS (
+    DAMAGE_INFERENCE (
         synced_ch
-            .map{ meta, bam, bai, fasta, fai  -> [meta, bam, fasta] } // meta, bam
     )
 
     if (! params.skip_variant_calling) {

@@ -100,6 +100,11 @@
                         "git_sha": "9a88058962c0ee1715f2ad0e017c37e0cd75e532",
                         "installed_by": ["modules"]
                     },
+                    "pydamage/analyze": {
+                        "branch": "master",
+                        "git_sha": "f5de03e33783fe0a303d9f5732e4d3782aa545ed",
+                        "installed_by": ["modules"]
+                    },
                     "qualimap/bamqc": {
                         "branch": "master",
                         "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe",

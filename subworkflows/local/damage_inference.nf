@@ -1,5 +1,7 @@
 include { PYDAMAGE_ANALYZE   } from '../../modules/nf-core/pydamage/analyze/main'
 include { MAPDAMAGE2         } from '../../modules/nf-core/mapdamage2/main'
+include { NGSBRIGGS          } from '../../modules/local/ngsbriggs'
+
 
 workflow DAMAGE_INFERENCE {
     take:
@@ -7,6 +9,12 @@ workflow DAMAGE_INFERENCE {
 
     main:
         MAPDAMAGE2(
+            input.map {
+                meta, bam, bai, fasta, fai -> [meta, bam, fasta]
+            }
+        )
+
+        NGSBRIGGS (
             input.map {
                 meta, bam, bai, fasta, fai -> [meta, bam, fasta]
             }

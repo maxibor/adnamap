@@ -1,6 +1,7 @@
 include { PYDAMAGE_ANALYZE   } from '../../modules/nf-core/pydamage/analyze/main'
 include { MAPDAMAGE2         } from '../../modules/nf-core/mapdamage2/main'
 include { NGSBRIGGS          } from '../../modules/local/ngsbriggs'
+include { COMPUTE_LAMBDA     } from '../../modules/local/compute_lambda'
 
 
 workflow DAMAGE_INFERENCE {
@@ -24,5 +25,9 @@ workflow DAMAGE_INFERENCE {
             input.map {
                 meta, bam, bai, fasta, fai -> [meta, bam, bai]
             }
+        )
+
+        COMPUTE_LAMBDA(
+            MAPDAMAGE2.out.lgdistribution
         )
 }

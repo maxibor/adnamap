@@ -443,7 +443,7 @@ workflow ADNAMAP {
     }
 
     MULTIQC (
-        ch_multiqc_files.collect()
+        ch_multiqc_files.collect().unique()
     )
     multiqc_report = MULTIQC.out.report.toList()
     ch_versions    = ch_versions.mix(MULTIQC.out.versions)
